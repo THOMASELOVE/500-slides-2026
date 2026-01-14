@@ -1,0 +1,743 @@
+---
+title: "500 Class 02"
+author: "Thomas E. Love"
+date: "2026-01-22"
+format:
+  revealjs: 
+    theme: dracula
+    self-contained: true
+    slide-number: true
+    footnotes-hover: true
+    preview-links: auto
+    date-format: iso
+    footer: "500 Class 2 | 2026-01-22 | <https://thomaselove.github.io/500-2026/>"
+---
+
+## Today's Agenda
+
+- The Hormone Replacement Therapy Story
+- Tools for Assessing Causal Effects
+    - Subclassification and Cochran's Example
+    - Using Matched Sets to Adjust for Overt Bias
+- Defining and Motivating the Propensity Score
+- Matching using the Propensity Score: The Key Ideas
+
+# The Hormone Replacement Therapy Story
+
+## Estrogen & Alzheimer's (Yaffe 1998)
+
+```{r, echo = FALSE, fig.align = "center"}
+knitr::include_graphics("c02/figures/yaffe.png")
+```
+
+## HRT and Dementia, 1998-2001
+
+Meta-Analysis from Yaffe et al. (1998)
+
+- Promising results for Alzheimer's disease (previous slide)
+
+> Estrogen associated with a 29% decreased risk of dementia
+
+
+Burkman et al. (2001): 
+
+> Estrogen and HRT users have ... a 20% to 60% reduction in the risk of Alzheimer's disease.
+
+## BUT
+
+- These studies were, for the most part,
+    + small in size
+    + short in duration
+    + non-randomized, 
+    + and uncontrolled.
+
+- The largest, most methodologically sound observational study (Barret-Connor et al. 1993) of estrogen use on *cognition* in non-demented women showed no benefit.
+
+## HRT and Dementia by 2005
+
+- Craig et al. (2005) Women's Health Initiative Memory Study 
+
+> Estrogen with or without progestin, given to women 65 years and older ... substantially increases the risk of dementia of any cause and cognitive decline.
+
+## Cache County Memory Study
+
+Zandi et al. (2002)
+
+- This was a prospective study of incident dementia among 1357 men and 1889 women residing in a single county in Utah.  Patients were first assessed in 1995-97, with follow-up 3 years later.
+- Adjustments in models included terms for age and age squared, years of education, and presence of 1 or 2 APOE $\epsilon 4$ alleles, and interactions.
+
+Figure on next slide...
+
+## Cache County Memory Study
+
+![](c02/figures/cache_county.png)
+
+
+## Conclusions from Cache County
+
+- Women using HRT had a reduced risk of AD compared with non-HRT users (adjusted HR is 0.59).
+- Risk varied with duration of HRT use, so that a woman's sex-specific increase in risk disappeared entirely with more than 10 years of treatment.
+- Conclusions: Prior HRT use is associated with reduced risk of AD, but there is no apparent benefit with current HRT use unless such use has exceeded 10 years.
+
+
+## WHIMS (Women's Health Initiative Memory Study)
+
+RCT: see Shumaker et al. (2003, 2004) and Espeland (2004)
+
+- 4,352 post-menopausal women age 65 or more
+- Estrogen + Progestin HRT
+    - increased risk (hazard ratio 2.05) for probable dementia
+    - treating 434 women age 65+ with combination HRT would *cause* one new dementia case.
+    - No substantial impact on mild cognitive impairment
+
+## WHIMS Baseline Comparisons
+
+No large baseline differences between the trial arms (Estrogen and Progestin vs. Placebo) in 
+
+- Age, Education, Smoking, Diabetes, 
+- Prior HRT or Aspirin use, or 3MSE score. 
+
+Bigger differences (E & P vs. placebo) in 
+
+- History of Stroke (1.0% vs. 1.9%), 
+- Statin use (12.0% vs. 9.8%), and 
+- Adherence to protocol (E & P < Placebo)
+
+## What about Cardiovascular Disease?
+
+- Stampfer et al 1985 [Nurses' Health Study] ... "estrogen reduces the risk of severe CHD."
+- Col et al 1997 (JAMA) ... "HRT should increase life expectancy for nearly all postmenopausal women"
+- WHI trial 2002 (JAMA) ... "(HRT) should not be initiated or continued for primary prevention of coronary heart disease."
+
+## Selection Bias? (NHS: OS, WHI: RCT)
+
+- Healthy User Effect?
+    - Women with healthy behaviors may select to use postmenopausal hormones. (prevention bias)
+
+- In NHS, HRT users tended to have better CV risk profiles
+- NHS HRT users were generally better educated
+- Perhaps women taking HRT / ERT were "compliant" and have lower CHD risk.
+- HRT users have more contact with physicians, and are perhaps more health conscious?
+
+## Benson and Hartz (2000)
+
+Comparison of Observational Studies and RCTs
+
+> For many years it has been claimed that observational studies find stronger treatment effects than randomized, controlled trials... In only 2 of the 19 analyses of treatment effects did the combined magnitude of the effect in observational studies lie outside the 95% CI for the combined magnitude in the RCTs. ... We found little evidence that estimates ... in observational studies reported after 1984 are ... qualitatively different from those obtained in RCTs.
+
+## Causation or Association?
+
+Issues to consider:
+
+- Strength of effect
+- Consistency (reliability and replicability)
+- Specificity
+- Temporality
+- Biological gradient (dose effect, essentially)
+
+See McGowan (2017) & Bradford Hill (1965)
+
+## Causation or Association?
+
+More issues to consider:
+
+- Plausibility
+- Coherence (with what is known in the field)
+- Experiment (implement a counterfactual)
+- Analogy (similar effect from similar exposure?)
+
+See McGowan (2017) & Bradford Hill (1965)
+
+## How Can We Avoid Being Misled?
+
+1. What differentiates an observational study from a randomized controlled trial?
+    - One key element: potential for selection bias.
+2. What is selection bias, and why should I care about it?
+    - Baseline characteristics of comparison groups are different in ways that affect the outcome.
+    - *Overt* bias: we observe in our measures
+    - *Hidden* bias: across measures we didn't think to observe.
+
+## How Can We Avoid Being Misled?
+
+3. What can be done to deal with selection bias in observational studies?
+    - **Propensity score** methods to address overt bias.
+    - *Sensitivity analyses* to deal with hidden bias, especially in studies involving matched samples.
+
+This doesn't suggest that these are the *only* available strategies, but they are two that we will focus on.
+
+## Causal Inference Approaches
+
+```{r, echo = FALSE, fig.align = "center"}
+knitr::include_graphics("c02/figures/riederer.png")
+```
+
+from [Emily Riederer](https://emilyriederer.netlify.app/post/causal-design-patterns/)
+
+## Testing out Cause and Effect: Comparing Potential Outcomes
+
+- The causal effect of a treatment is based on a comparison of two potential outcomes.
+    - Outcome patient would have **if treated**.
+    - Outcome patient would have **if untreated**.
+- Causal effect = Treated - Untreated difference (or ratio, or whatever)
+
+The key problem is that we only get to observe **one** of these outcomes.
+
+
+# Tools for Assessing Causal Effects
+
+## Assessing the Causal Effect of an Exposure on an Outcome
+
+Objective: Draw causal inferences between [use of exposure vs. non-use] and outcome
+
+- Standard Approach: Risk Adjustment
+- Problem: Selection Bias (exposed people are different from unexposed people at baseline, in ways that affect the outcome)
+- Idea: Compare exposed to unexposed subjects that looked similar (had similar propensity for exposure) prior to the exposure decision
+
+## Overt, but no **Hidden** Bias Model
+
+Two units with the same value of the covariates **x** have the same probability $\pi$ of receiving the exposure.
+
+- An observational study is **free of hidden bias** if the unknown $\pi_j$s are known to depend only on the observed covariates $x_j$.
+- Sometimes this is referred to as "randomization based on covariates"
+
+
+## How can we adjust for overt bias?
+
+Simplest approach: stratify on the covariates **x**
+
+- Exact stratification - two units are in the same stratum only if they have the same value of x.
+- If there is no hidden bias and we stratify exactly, then all units in the same stratum have the same probability of treatment, so we can use methods appropriate for a randomized experiment.
+
+## A Simple Survival Comparison
+
+Status at 30 days | Alive | Dead | Pr(Alive)
+------------ | -----:| ----:| ----------:
+Without Exposure | 80 | 120 | 0.40
+With Exposure | 130 | 70 | 0.65
+
+- Without Exposure (perhaps as estimated by historical records) only 40\% of subjects survived.
+- With Exposure, we see a "clinically meaningful" improvement (65\% of subjects survived.)
+- $p$ value from Fisher's exact test is $< 0.001$.
+
+But was this a randomized trial, or an observational study?
+
+
+## Simple Survival Comparison
+
+Suppose in addition to 
+
+- our **outcome** (Alive or Dead at 30 days) 
+- and **exposure** status, 
+
+we also had a **covariate**, say, sex, available for each subject. Suppose 200 of the subjects in the study are Male, and 200 are Female.
+
+Suppose also that sex might be related to the outcome. 
+
+- Can we adjust for sex's effect in assessing the impact of our exposure on that same outcome? How?
+
+
+## Stratification in our Survival Comparison
+
+ALL PATIENTS | Alive | Dead | Pr(Alive)
+------------ | -----:| ----:| ----------:
+Without Exposure | 80 | 120 | 0.40
+With Exposure | 130 | 70 | 0.65
+
+Now, 200 of these subjects are Male, and 200 are Female.
+
+## Survival Comparison among Male Subjects
+
+MALE | Alive | Dead | Pr(Alive)
+------------ | -----:| ----:| ----------:
+Without Exposure | 40 | 60 | 0.40
+With Exposure | 40 | 60 | 0.40
+
+No difference between the exposed and unexposed group in terms of survival, among males.
+Is that also the story for our female subjects?
+
+## Survival Comparison among Female Subjects
+
+MALE | Alive | Dead | Pr(Alive)
+------------ | -----:| ----:| ----------:
+Without Exposure | 40 | 60 | 0.40
+With Exposure | 40 | 60 | 0.40
+
+
+FEMALE | Alive | Dead | Pr(Alive)
+------------ | -----:| ----:| ----------:
+Without Exposure | 40 | 60 | 0.40
+With Exposure | 90 | 10 | 0.90
+
+
+Stratification allows comparison adjusting for sex.
+
+# Cochran's Smoking Example 
+
+## Cochran's Smoking Example (1968)
+
+- Outcome: mortality rates of US male [1] cigarette smokers, [2] cigar/pipe smokers and [3] non-smokers
+
+*Table*: US Death Rates per 1,000 person-years
+
+Smoking Group | Unadjusted Death Rate 
+:-------------: | :----------------: 
+Non-Smokers | 20.2
+Cigarettes only | 20.5
+Cigars, pipes | 35.5 
+
+Is there a **covariate** worth considering? **Suggestions**?
+
+## US Deaths per 1000 person-years
+
+Smoking Group | Mean Age in Years | Unadjusted Death Rate 
+------------- | :----------------: | :--------------------: 
+Non-Smokers | 54.9 | 20.2 
+Cigarettes only | 50.5 | 20.5 
+Cigars, pipes | 65.9 | 35.5 
+
+Now, how might we adjust for the impact of *age* on our estimates of the death rate?
+
+## Subclassification on Age
+
+Create *3 subclasses* using age (low, middle, high)
+
+1. Calculate mortality rates in each smoking group separately for "low", "middle" and "high" age.
+2. For non-smokers, combine "low", "middle" and "high" estimates by weighting according to the population proportions of "low", "middle" and "high" age.
+3. Repeat to estimate for "cigarettes only" and "cigars, pipes"
+
+## Three-way stratification by age
+
+Group | Mean Age | Raw Death Rate | **Age-Adjusted**
+:------- | :---: | :----: | :---:
+Non-Smokers | 54.9 | 20.2 | **20.3**
+Cigarettes only | 50.5 | 20.5 | **28.3**
+Cigars, pipes | 65.9 | 35.5 | **21.2**
+
+## Cochran (1968): Key Finding
+
+Five subclasses are often sufficient to remove over 90% of the bias due to the subclassifying variable or covariate.
+
+- As we've seen, even as few as 3 subclasses can have a big impact.
+
+So, adjustment through subclassification/stratification on a single covariate looks pretty useful.
+
+- Can we just do this in every scenario?
+    
+## Why couldn't we do this?
+
+- We don't (typically) have only one covariate.
+- As the number of covariates increases, the number of subclasses grows exponentially 
+    - 3 categories for each of $p$ covariates yields $3^p$ subclasses, for example.
+- Also, if $p$ is large, some subclasses will contain no units, or will contain only exposed or unexposed units but not both.
+
+The *propensity score* provides a potential solution here.
+
+## Aspirin Use and Mortality
+
+6174 consecutive adults at CCF undergoing stress echocardiography for evaluation of known or suspected coronary disease. (Gum 2001)
+
+- 2310 (37%) were taking aspirin (treatment).
+- Main Outcome: all-cause mortality 
+    - Median follow-up: 3.1 years
+- Univariate Analysis: 4.5\% of aspirin patients died, and 4.5\% of non-aspirin patients died.
+    - Unadjusted Hazard Ratio: 1.08 (0.85, 1.39)
+
+## Matching on the Covariates, **X**
+
+- We can create a **matched sample**, where we match treated subjects to control subjects, on the basis of their covariates.
+    + Simplest is *exact matching* - but this can pose problems unless we have few covariates to deal with, with very limited possible values.
+    + Often exact stratification or matching is impossible, but when it is, things go smoothly.
+
+## Aspirin Users vs. Non-Users?
+
+Gum (2001) <br/> Variable | Aspirin <br/> (*n = 2310*) | No Aspirin <br/> (*n = 3864*)
+:------------------  | ------------: | ----------:
+Age, Mean (SD) | 62 (11) | 56 (12)
+Male, % | 77.0 | 56.1
+
+- Might it be reasonable to match up patients who are the same sex and similar in age?
+- Or to stratify into groups by age and sex?
+
+## But there are more covariates...
+
+Gum (2001) <br/> Variable | Aspirin <br/> (*n = 2310*) | No Aspirin <br/> (*n = 3864*)
+:------------------  | ------------: | ----------:
+Age, Mean (SD) | 62 (11) | 56 (12)
+Male, % | 77.0 | 56.1
+Prior CAD, % | 69.7 | 20.1
+Beta Blocker, % | 35.1 | 14.2
+
+- Can we match on Age *and* Sex *and* CAD history *and* beta-blocker prescription?
+- How about matching on **all 31** covariates?
+
+## Using Matched Sets or Strata to Adjust for Overt Selection Bias
+
+- Observe a set of *p* covariates, collected in **X**
+- Even if each covariate is binary, there are 2^p^ possible values of **X**
+    + Many subjects are likely to have unique values of **X**.
+- Realistic Goal: compare treated and control groups with similar distributions of **X**, even if matched individuals have differing values of **X**
+
+Key tool for doing this well: propensity score
+
+## What Do We Want to Know about a Health Intervention? (anabus.com)
+
+- **Response**: Can we estimate the impact of the intervention?  Can we estimate costs and benefits?
+- **Predictors**: Can we "mine" for attributes that help predict response to the intervention?
+- **Evaluation**: Can we fairly estimate the average  health impact of our intervention?
+- **Target Evaluation**: Can we identify likely responders?  Subgroup analyses?
+
+## The Data You Wish You Had
+
+Subject | Health if exposed | if unexposed 
+:-----: | :----------------: | :------------------: 
+A | 12 | 8 
+B | 7 | 4 
+C | 7 | 3 
+D | 12 | 9 
+
+**ALL** potential outcomes available!
+
+## The Data You Wish You Had
+
+Subject | Health if exposed | if unexposed | Exposure Effect
+:-----: | :----------------: | :------------------: | :--------------:
+A | 12 | 8 | 4
+B | 7 | 4 | 3
+C | 7 | 3 | 4
+D | 12 | 9 | 3
+
+Wouldn't this be great!
+
+
+## Grim Reality
+
+Subject | Health if exposed | if unexposed | Exposure Effect
+:-----: | :----------------: | :------------------: | :--------------:
+A | 12 | *?* | *?*
+B | 7 | *?* | *?*
+C | *?* | 3 | *?*
+D | *?* | 9 | *?*
+
+Causal inference is a **missing data** problem.
+
+How should we fill in those question marks?
+
+# Matching and Causal Effects
+
+---
+
+![](c02/figures/matching/Slide1.png)
+
+---
+
+![](c02/figures/matching/Slide2.png)
+
+---
+
+![](c02/figures/matching/Slide3.png)
+
+---
+
+![](c02/figures/matching/Slide4.png)
+
+---
+
+![](c02/figures/matching/Slide5.png)
+
+---
+
+![](c02/figures/matching/Slide6.png)
+
+---
+
+![](c02/figures/matching/Slide7.png)
+
+---
+
+![](c02/figures/matching/Slide8.png)
+
+---
+
+![](c02/figures/matching/Slide9.png)
+
+---
+
+![](c02/figures/matching/Slide10.png)
+
+---
+
+![](c02/figures/matching/Slide11.png)
+
+---
+
+![](c02/figures/matching/Slide12.png)
+
+## The Propensity Score
+
+*Definition*: The conditional probability that a subject receives an exposure given the values of their vector of covariates.
+
+- Propensity Score = Pr( exposed \| covariates)
+
+Reduces the baseline information to a single, composite summary of the covariates, between 0 and 1.
+
+## The Propensity Score
+
+Propensity Score = Pr( exposed \| covariates)
+
+- Of course, we know whether a subject in fact either receives or doesn't receive the exposure.  
+- But we will estimate this probability for each subject as a convenient way of expressing the impact of covariate information on the exposure assignment decision, as a scalar value between 0 and 1.
+
+## Estimating the Propensity Score 
+
+The most common approach is to estimate a Logistic Regression Model:
+
+- Y = Exposure Group 
+    + 1 = exposed, 0 = unexposed
+- Predictors are the observed covariates
+
+Use anything related to exposure decisions that can be collected prior to exposure assignment.
+
+Propensity Scores = Predicted Pr(exposure) for each subject, i.e. the **fitted values**
+
+## Why Estimate Pr(subject was "exposed")?
+
+- Using Pr(subject would have been exposed), we create a quasi-randomized experiment.
+
+- If we have two subjects, one treated and one control, with the same propensity score, we can imagine that these two subjects were randomly assigned to each group - just as if we were doing an experiment!
+- Except that here we can't assume that we control for anything that we didn't measure.
+
+---
+
+![](c02/figures/propensity/Slide1.png)
+
+---
+
+![](c02/figures/propensity/Slide2.png)
+
+---
+
+![](c02/figures/propensity/Slide3.png)
+
+---
+
+![](c02/figures/propensity/Slide4.png)
+
+---
+
+![](c02/figures/propensity/Slide5.png)
+
+---
+
+![](c02/figures/propensity/Slide6.png)
+
+---
+
+![](c02/figures/propensity/Slide7.png)
+
+## Grim Reality
+
+Subject | Health if exposed | if unexposed | Exposure Effect
+:-----: | :----------------: | :------------------: | :--------------:
+A | 12 | *?* | *?*
+B | 7 | *?* | *?*
+C | *?* | 3 | *?*
+D | *?* | 9 | *?*
+
+## Improving Grim Reality
+
+Subject | Propensity for Exposure | Health if exposed | if unexposed
+:-----: | :---------------: | :-----------------: | :--------------:
+A | 0.80 | 12 | *?*
+B | 0.50 | 7 | *?* 
+C | 0.51 | *?* | 3 
+D | 0.79 | *?* | 9 
+
+- Can we use the propensity score to guide our matching?
+- Can we plug in estimates after matching?
+
+## Propensity Score Matching yields a richer Database
+
+Subject | PS | Health if exposed | if unexposed | Exposure Effect
+:-----: | :------: | :-----------------: | :-------------: | :--------:
+A | 0.80 | 12 | **[9]** | *[3]*
+B | 0.50 | 7 | **[3]** | *[4]* 
+C | 0.51 | **[7]** | 3 | *[4]*
+D | 0.79 | **[12]** | 9 | *[3]* 
+
+Now, we can estimate the **impact of the exposure** on each matched patient.
+
+## Using the Propensity Score?
+
+1. Start with a sample where the exposed subjects don't look very much like the unexposed subjects.
+2. Adjust the sample (in some manner) to make the distributions of exposed and unexposed subjects look more similar prior to exposure.
+3. This will let us attribute the differences we see in outcomes between these adjusted samples more easily to the exposure's causal effect, and not so much to the original differences between the groups.
+
+## Using the Propensity Score?
+
+- To do this, we estimate the propensity score: the probability of receiving the exposure for each subject given their covariate values.
+- Then, we use the propensity score in one or more of four ways, as listed on the next slide, to fuel our estimates of causal effects.
+
+## Propensity Score Methods
+
+1. Subclassification / *Stratification* on the Propensity Score
+2. Direct (Regression) *Adjustment* using the Propensity Score
+3. *Matching* using the Propensity Score
+4. *Weighting* using the Propensity Score
+
+- We can combine these approaches to obtain more robust estimates.
+- I'll demonstrate R code for each of these ideas in Class 4. 
+
+# Here's a spot for a **break**.
+
+## A Simple Observational Study
+
+![](c02/figures/schematics/Slide1.png)
+
+---
+
+![](c02/figures/schematics/Slide2.png)
+
+---
+
+![](c02/figures/schematics/Slide3.png)
+
+---
+
+![](c02/figures/schematics/Slide4.png)
+
+---
+
+![](c02/figures/schematics/Slide5.png)
+
+---
+
+![](c02/figures/schematics/Slide6.png)
+
+---
+
+![](c02/figures/schematics/Slide7.png)
+
+---
+
+![](c02/figures/schematics/Slide8.png)
+
+---
+
+![](c02/figures/schematics/Slide9.png)
+
+---
+
+![](c02/figures/schematics/Slide10.png)
+
+---
+
+![](c02/figures/schematics/Slide11.png)
+
+---
+
+![](c02/figures/schematics/Slide12.png)
+
+
+# Propensity Score Matching
+
+---
+
+![](c02/figures/schematics/Slide32.png)
+
+---
+
+![](c02/figures/schematics/Slide33.png)
+
+---
+
+![](c02/figures/schematics/Slide34.png)
+
+---
+
+![](c02/figures/schematics/Slide35.png)
+
+---
+
+![](c02/figures/schematics/Slide36.png)
+
+---
+
+![](c02/figures/schematics/Slide37.png)
+
+---
+
+![](c02/figures/schematics/Slide38.png)
+
+---
+
+![](c02/figures/schematics/Slide39.png)
+
+---
+
+![](c02/figures/schematics/Slide40.png)
+
+---
+
+![](c02/figures/schematics/Slide41.png)
+
+---
+
+![](c02/figures/schematics/Slide42.png)
+
+
+## What Propensity Scores Can and Cannot Do
+
+- If we match exposed subjects to controls with similar propensity scores, we can (sort of) behave as if they had been randomly assigned to exposures.
+
+- But if our propensity model misses an important reason why subjects are selected to an exposure, we'll be in trouble, and we'll **never know it**.
+
+## Rosenbaum, Chapters 1-3
+
+1. The Effects Caused By Treatments
+    - Bleeding George Washington
+2. Randomized Experiments
+    - Treatments for Ebola
+3. Observational Studies: The Problem
+    - Smoking and Periodontal Disease
+    - Smoking and Lung Cancer
+    - Boxplots and the Propensity Score
+
+## For Discussion
+
+- What was the most **important** thing you learned from reading Chapters 1-3?
+- What was the **muddiest**, least clear thing that arose in your reading?
+- What questions are at the front of your mind now?
+
+## Coming Up
+
+- Propensity Matching (especially 1:1 matching)
+- Propensity Weighting (another popular approach)
+- Direct (regression) adjustment using the propensity score
+- Subclassification/stratification on propensity score quantiles
+
+There's essentially **no R code** in Class 3.
+
+There's essentially **nothing but R code** in Class 4.
+
+## Lab 1: due *Tuesday* 2026-01-27 {.smaller}
+
+Use our Lab 1 template, please, and submit your work to [Canvas](https://canvas.case.edu/) by **Noon**.
+
+1. Get access to the DIG teaching data from NHLBI
+2. Create a sample according to our specifications
+3. Create a Table 1 comparing MI to no MI (see template for tips)
+4. Build a logistic regression model comparing MI to no MI (See Lab 0 Task 1)
+5. Redefine sample and redo steps 3 and 4
+6. Add fitted probabilities from step 5 to your data and plot against observed MI status (see Lab 0 Task 3)
+
+Our teaching assistant, **Sarah Albalawi**, will review your work and point out issues. You'll see the answer sketch by Class 3.
+
+- Remember Sarah's **office hours** on Sundays from 2 to 3:30 PM over Zoom. See [Canvas](https://canvas.case.edu) or our Shared Google Drive for details.
+
+## What Should I be doing before Class 3?
+
+- Complete and submit Lab 1 by **Tuesday 2026-01-27 at noon**.
+- *Causal Inference* read Chapter 4 (Adjustments for Measured Covariates)
+- Skim Connors 1996 and Gum 2001 to see how propensity score matching has been done in practice
+- Look into what you need to do to [select an OSIA article](https://thomaselove.github.io/500-2026/osia.html) (due Tuesday 2026-02-10)
+

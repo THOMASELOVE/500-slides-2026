@@ -19,7 +19,7 @@ format:
 -   Course Overview and Logistics
 -   Statistical Philosophy and Problem-Solving
 -   What distinguishes Observational Studies?
--   The STROBE Guidelines: Items 1-12
+-   The STROBE Guidelines
 -   Motivation: Aspirin and Mortality in Heart Patients
     -   Causal Effects as comparing potential outcomes
 
@@ -560,8 +560,6 @@ Checklist of items that should be included in reports of observational studies
 
 18 items are common to all three study designs and four (6, 12, 14 and 15) are specific for cohort, case-control, or cross-sectional studies.
 
-We'll briefly discuss items 1-12 today, leaving 13-22 for later.
-
 ## STROBE Items 1-3 {.smaller}
 
 *Title and abstract*
@@ -645,6 +643,23 @@ Items 18-21 are about **Discussion** (Key Results, Limitations, Interpretation, 
 Item 22 (below) is about Other Information (Funding)
 
 > Give the source of funding and the role of the funders for the present study and, if applicable, for the original study on which the present article is based
+
+## STROBE checklist on Results
+
+The discussion of Results is something we'll spend more time on later in the term, but here are the general areas of interest (continues on the next slide.)
+
+13. Participants
+14. Descriptive Data
+15. Outcome Data
+16. Main Results (unadjusted and adjusted estimates)
+17. Other Analyses (subgroups, etc.)
+
+## STROBE checklist on Discussion
+
+18. Key Results (refer to Study Objectives)
+19. Limitations (including sources of potential bias)
+20. Interpretation (a *cautious* interpretation - distinguish cause/effect from correlation/association)
+21. Generalizability (external validity)
 
 ## STROBE Articles
 
@@ -889,5 +904,4 @@ From the [Course Calendar](https://thomaselove.github.io/500-2026/calendar.html)
 - Work through [Lab 0](https://thomaselove.github.io/500-2026/lab0.html) Example
 - Read Rosenbaum **Causal Inference** through Chapter 3
 - [Sources](https://github.com/THOMASELOVE/500-sources)
-    - Benson & Hartz 2000, Abramson Chapter 2
-    - McGowan blog, Bradford Hill 1965
+    - Benson & Hartz 2000, McGowan 2017, Bradford Hill 1965
