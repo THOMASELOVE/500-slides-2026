@@ -15,7 +15,7 @@ format:
 
 ## Today's Agenda
 
--   Welcome to 500!
+-   Welcome to 500!!
 -   Course Overview and Logistics
 -   Statistical Philosophy and Problem-Solving
 -   What distinguishes Observational Studies?
