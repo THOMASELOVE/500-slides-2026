@@ -1,0 +1,598 @@
+---
+title: "500 Class 03"
+author: "Thomas E. Love"
+date: "2026-01-29"
+format:
+  revealjs: 
+    theme: dracula
+    self-contained: true
+    slide-number: true
+    footnotes-hover: true
+    preview-links: auto
+    date-format: iso
+    footer: "500 Class 3 | 2026-01-29 | <https://thomaselove.github.io/500-2026/>"
+---
+
+## Today's Agenda
+
+- Estimating the Propensity Score (Building the Model)
+  - What to include?
+  - ATT vs. ATE Estimates
+- Matching with the Propensity Score
+  - Standardized Differences and the Love Plot
+  - Incomplete vs. Inexact Matching
+- Schematics for other Propensity Methods
+- Rosenbaum, Chapter 4 discussion
+
+## The Propensity Score
+
+$$
+PS = Pr(\mbox{received exposure} | {\bf X})
+$$
+
+The propensity score is...
+
+- the conditional probability of receiving the exposure given a particular set of covariates
+- a way of projecting meaningful covariate information for a given subject into a single composite summary score in (0, 1)
+
+## The Propensity Score is...
+
+- a tool that lets us account for *overt* selection bias (things contained in **X**) but not (directly) for the potential biasing effects of omitted/hidden covariates
+- often, but not inevitably, fit with a "kitchen sink" logistic regression^[See McCaffrey et al 2004 on boosting, and see Brookhart 2006 on variable selection.]
+
+$$
+ln(\frac{PS}{1-PS}) = \beta_0 + \beta_1 X_1 + ... + \beta_k X_k
+$$
+
+
+## What To Include in the Propensity Score Model
+
+- **All** covariates that subject matter experts (and subjects) judge to be important when selecting treatments.
+- **All** covariates that relate to treatment and outcome, certainly including any covariate that improves the prediction of treatment group.
+- Sop up as much "signal" as possible.
+
+## Fitting a Propensity Score Model: What to Worry About... 
+
+1. Do you have a reasonable sample size to build a logistic regression model?
+2. Is your logistic regression model parsimonious?
+3. Are your predictors correlated with one another?
+4. Are your predictor estimates large relative to their standard errors?
+5. Have you performed appropriate diagnostic checks?
+
+## Propensity Score Models: What to Worry About... 
+
+6. Have you done bootstrap analyses to assess shrinkage?
+7. Have you used cross-validation to aid in model selection?
+8. Have you validated your model on new data?
+9. Does an ROC-curve analysis suggest your model does well in terms of rank-order discrimination?
+10. Are your model's predictions are well-calibrated?
+
+## What to **Actually** Worry About?
+
+**None** of those things.
+
+- When fitting a propensity model, we instead simply ensure that the fitted propensity scores (when used in matching, weighting, etc.) **adequately balance** the distribution of covariates across the exposure groups.
+- We want a **fair basis for comparison** between exposed and control subjects.
+
+## Which is the "exposed" group?
+
+Defining one group as "exposed" and the other as "control" is somewhat arbitrary.
+
+- It does matter from an analytic perspective when you fit a propensity model to predict the probability of being in the "exposed" group, given the covariates.
+- Your life will be easier if you define the "exposed" group as the one with the smaller sample size.
+
+## Propensity Model Diagnostics?
+
+Rubin (2004) describes "confusion between two kinds of statistical diagnostics"
+
+1. Diagnostics for the successful prediction of probabilities and parameter estimates underlying those probabilities.
+2. Diagnostics for the successful design of observational studies based on estimated propensity scores.
+
+Basically, the set of tasks in 1 are irrelevant to 2.
+
+## Should we be checking propensity model goodness of fit?
+
+Weitzen et al. (2004): Are tests used to evaluate logistic model fit and discrimination helpful in detecting the omission of an important confounder?
+
+- Simulated data including an important binary confounder, and they compared inclusion to exclusion
+- Hosmer-Lemeshow GOF test and C statistic were of no value in detecting residual confounding in treatment effect estimates
+
+---
+
+![](c03/figures/schematics/slides03_001.png)
+
+---
+
+![](c03/figures/schematics/slides03_002.png)
+
+---
+
+![](c03/figures/schematics/slides03_003.png)
+
+---
+
+![](c03/figures/schematics/slides03_004.png)
+
+---
+
+![](c03/figures/schematics/slides03_005.png)
+
+## Estimation of ATT vs. ATE
+
+Suppose Y is our outcome. 
+
+- We have potential outcomes Y(treated) and Y(control).
+- We have a treatment indicator Z, where Z = 1 if treated.
+
+We can estimate the causal effect of Z on Y, using either an ATT (average treatment effect on the treated) or ATE (average treatment effect) approach.
+
+## ATT Approach
+
+The average treatment effect on the treated (**ATT**) = E[Y(treated) - Y(control) | Z = 1].
+
+- This is the expected gain in outcome due to treatment for the population of people who were actually treated. 
+  - Most of the time, the ATT is the estimand we focus on in propensity score matching where we match one or more control patients (from a pool of such patients) to each treated patient.
+  - The idea is to match the treated population closely.
+
+## ATE Approach  
+  
+The average treatment effect (**ATE**) = E[Y(treated) - Y(control)].
+
+- This is the expected gain in outcome due to treatment for a randomly selected member of the entire population of interest.
+  - The ATE estimate focuses on the population as a whole (treated + controls).
+
+# Multivariate Matching with the Propensity Score
+
+## Propensity Score Matching
+
+Match subjects so that they balance on multiple covariates using one scalar score^[Seminal papers: Rosenbaum and Rubin (1985, 1983, 1984)].
+
+- Goal: Emulate a RCT in matching, then use standard analyses to compare matched sets.
+- Design: Treated subjects matched to people who didn't receive treatment but who had similar propensity to receive treatment (match treated to untreated "clones.")
+
+## Multivariate Matching Mechanics
+
+- Close but inexact PS matching on a large pool of covariates removes most of the bias due to those covariates
+    - Assessing the Quality of the Matching
+    - Checking for Covariate Balance
+
+## Key Example (Gum 2001)
+
+![](c03/figures/gum/gum1.png)
+
+## Aspirin Use and Mortality
+
+6174 consecutive adults at CCF undergoing stress echocardiography for evaluation of known or suspected coronary disease.
+
+- 2310 (37%) were taking aspirin (treatment).
+- Main Outcome: all-cause mortality 
+  - median follow-up time 3.1 years
+- Unadjusted Results: 4.5% of the aspirin and 4.5% of the non-aspirin patients died. Unadjusted hazard ratio = 1.08 (0.85, 1.39).
+
+## Covariate Adjustment {.smaller}
+
+- Demographics (Age, Sex)
+- Cardiovascular risk factors
+- Coronary disease history
+- Use of other medications
+- Ejection fraction
+- Exercise capacity
+- Heart rate recovery
+- Echocardiographic ischemia
+
+Adjusting for all of those factors in a regression model, then aspirin use is now associated with reduced mortality.
+
+- Hazard Ratio 0.67, with 95% CI (0.51, 0.87)
+
+## Gum (2001) Table 1
+
+![](c03/figures/gum/gum_table1A.png)
+
+## Using Standardized Differences to Quantify Covariate Imbalance
+
+For continuous variables,
+$$
+\Delta_{Std} = \frac{100 (\bar{x}_{ASA} - \bar{x}_{No})}{\sqrt{\frac{s^2_{ASA} + s^2_{No}}{2}}}
+$$
+
+For binary variables,
+$$
+\Delta_{Std} = \frac{100 (p_{ASA} - p_{No})}{\sqrt{\frac{p_{ASA}(1-p_{ASA}) + p_{No}(1-p_{No})}{2}}}
+$$
+
+Beta-Blocker | Aspirin | No Aspirin | $\Delta_{Std}$
+------------: | -----: | -----: | -----:
+Before Match | 35.1% (811/2310) | 14.2% (550/3864) | 49.9%
+After Match | 26.1% (352/1351) | 26.5% (358/1351) | -1.0%
+
+## Gum (2001) Table 1 (continued)
+
+![](c03/figures/gum/gum_table1B.png)
+
+## Pre-Matching Characteristics (1)
+
+Do the aspirin and non-aspirin groups show important differences in distribution at baseline?
+
+- At baseline, aspirin patients display higher mortality risk
+    - The aspirin patients are older, more likely to be male, and more likely to have a clinical history
+    - more likely to be on other medications
+    - cardiovascular assessments are (generally) worse; worse exercise capacity
+
+## Pre-Matching Characteristics (2)
+
+Do the aspirin and non-aspirin groups show important differences in distribution at baseline?
+
+- Reports on characteristics prior to matching
+    - 24 of 31 have p < 0.001, one is p = 0.001, and two are p = 0.04.
+    - 25 of 31 have standardized differences > 10%, and six > 50%
+
+## Propensity Score Matching
+
+For each patient, we have a propensity score.
+
+1. Randomly select an Aspirin user.
+2. Match to the non-user with closest propensity score (within some limit or matching within "calipers")
+3. Eliminate both patients from pool, and repeat until you cannot find an acceptable match.
+
+This is called **greedy** matching.
+
+## Using a Caliper?
+
+- Could match a non-user with Propensity Score inside "calipers" who matches exactly on characteristic X,
+- Match non-user with Propensity score inside "calipers" and smallest "distance" on some pre-specified covariates.
+
+---
+
+![](c03/figures/matching/calipers.png)
+
+
+## Gum (2001) Matching Approach (Greedy and Incomplete):
+
+- Tried to match each aspirin user to a unique non-user with a propensity score that was identical to five digits.
+- If not possible, proceeded to a 4-digit match, then 3-digit, 2-digit, and finally a 1-digit match (i.e., propensity scores within .099).
+- **Result**: matches for 1,351 (58%) of the 2,310 aspirin patients to 1,351 unique non-users.
+
+---
+
+![](c03/figures/gum/gum_match1.png)
+
+---
+
+![](c03/figures/gum/gum_match2.png)
+
+---
+
+![](c03/figures/gum/gum_match3.png)
+
+---
+
+![](c03/figures/gum/gum_match4.png)
+
+# Plotting Standardized Differences: <br/> The "*Love Plot*"
+
+---
+
+![](c03/figures/gum/gum_loveplot1.png)
+
+## Why use these dotplots?
+
+- Can work in a report or in slides, and in black and white or color.
+- Has "at a glance" value: doesn't require much "getting up to speed."
+- Does not misstate the deviations.
+- Follows general rules of good display (Tufte, Cleveland), i.e. good data-ink ratio, etc.
+- "A-ha!" value. The plot helps the argument that the PS matching works when it does, and makes it clear where it doesn't when it doesn't.
+
+We could also consider an **Absolute** Standardized Differences Plot (next slide)
+
+---
+
+![](c03/figures/gum/gum_loveplot2.png)
+
+## Residual Covariate Imbalance?
+
+- Suppose a covariate appears seriously imbalanced after propensity matching. What might we do?
+    - Adjust for the covariate in the outcome model, after matching.
+    - Use an alternative measurement of the concept in the PS model.
+    - Consider re-matching using a different approach.
+    - Consider matching within propensity score calipers.
+
+## Incomplete vs. Inexact Matching
+
+- Trade-off between 
+    - Failing to match all treated subjects (incomplete)
+    - Matching dissimilar subjects (inexact matching)
+- Severe bias due to incomplete matching: so that it's usually better to match all treated subjects, then follow with analytical adjustments for residual imbalances in the covariates.
+
+## What happens in practice?
+
+- But in practice (at least in the clinical literature), a bigger concern has been inexactness.
+    - Certainly worthwhile to define the comparison group and carefully explore why subjects match.
+
+## Which Aspirin Users Get Matched? {.smaller}
+
+Generally, characteristics of unmatched aspirin users tend to indicate high propensity scores (to receive aspirin).
+
+- Overall, 37% of patients were taking aspirin.
+- The rate was much higher in some populations...
+  - 67% of Prior CAD patients were taking aspirin.
+  - So, prior CAD pts had higher propensity for aspirin. 
+  - 99.8% of unmatched aspirin users had prior CAD.
+- Likely that unmatched users tended towards larger propensity scores than matched users
+
+---
+
+![](c03/figures/matching/overlap.png)
+
+---
+
+![](c03/figures/matching/whomatches.png)
+
+## Matching with Propensity Scores
+
+1,351 aspirin subjects matched well to 1,351 unique non-aspirin subjects
+
+- Big improvement in covariate balance
+- Table 1 for matched group looks like an RCT
+- Can analyze the resulting matched pairs with standard methods (stratified Cox models, etc.)
+
+Matching still incomplete (lots of possible bias here) and this isn't the best algorithm for matching, either...
+
+## Results after Matching
+
+During follow-up, 153 (6%) of the 2,702 matched patients died.
+
+- Within the matched group, aspirin use was associated with a lower risk of death (4% vs. 8%, p = 0.002)
+
+## Hazard Ratios for Gum 2001
+
+Approach | n | HR | 95% CI
+:-------------------------------: | :----: | :----: | :------------:
+Full sample, <br/> no adjustment | 6174 | 1.08 | (0.85, 1.39)
+Full sample, no PS, <br/> adj. for all covariates | 6174 | 0.67 | (0.51, 0.87)
+PS-matched sample | 2702 | **0.53** | (0.38, 0.74)
+PS-matched, <br/> adj. for PS + covariates | 2702 | **0.56** | (0.40, 0.78)
+
+These PS-matched approaches yield ATT estimates.
+
+## Aspirin Conclusions / Caveats (1)
+
+- Subjects included in this study *may* be a more representative sample of real world patients than an RCT would provide. 
+    - On the other hand, they were getting cardiovascular care at the Cleveland Clinic.
+    - And there are some inclusion and exclusion criteria here, too.
+
+## Aspirin Conclusions / Caveats (2)
+
+- PS matching still isn't randomization, we can only account here for the factors that were measured, and only as well as the instruments can measure them.
+- There's no information here on aspirin dose, aspirin allergy, duration of treatment or medication adjustments.
+
+## Aspirin Statistical Concerns
+
+- This isn't the best way to match, certainly.
+- There's no formal assessment of sensitivity to hidden bias.
+- Looks like they avoided the issue of missing data.
+
+## Dealing with Missing Data (1)
+
+What if we have missing covariate values^[See D'Agostino 1998 and D'Agostino and Rubin 2000]?
+
+- The pattern of missing covariates is easy to balance
+    - Add a missingness indicator variable for all covariates with `NA`
+    - Then fill in values for those cases in the original variable before estimating PS
+
+## Dealing with Missing Data (2)
+
+- Matching on this augmented PS will tend to balance the observed covariates and the **pattern** of missingness, but yields no guarantee that the missing values themselves are actually balanced.
+
+## When Does Matching Work Well?
+
+Certain covariates are more easily controlled through matching in the design than through analytical adjustments.
+
+- Typically these are covariates that classify subjects into many small categories.
+- If matching isn't used, some categories may wind up with treated subjects and no controls, or vice versa.
+
+## Cost is an important consideration
+
+- If some covariate information is readily available, but other data are difficult to obtain or expensive, matching becomes more attractive.
+    - If data come with negligible costs, matching during the design is less attractive.
+    - Why? Suppose some controls are so different (at baseline) from the treated subjects that they will be of little use.  
+    - Matching may stop you from collecting data on such controls.
+    
+## Matching Conclusions, 1
+
+Matching is a fundamental part of the toolbox. For a book-length treatment, I recommend Rosenbaum 2010.
+
+- Propensity scores facilitate matching on multiple covariates at once.
+    - Matching is especially attractive when covariates classify subjects into many small categories.
+
+## Matching Conclusions, 2
+
+- Matching on a multivariate distance within PS calipers often beats matching on the PS alone, especially if you can pre-specify pivotal covariates.
+    - Matching within PS calipers followed by additional matching on key prognostic covariates is an effective method for both reducing bias and understanding the effects of specific covariates.
+    - Matching on `logit(PS)` rather than on raw `PS` can often improve yield.
+
+## Matching Conclusions, 3
+
+- If match is incomplete, it's especially useful to consider both matching and non-matching analyses
+- Optimal matches, full matches, cardinality matches, genetic matches and other more sophisticated matching approaches can be fruitful.
+- Matching can be especially attractive if data are costly - we can match on what we have first, and then collect new data only on the pre-matched subjects.
+
+# Here is a good place for a break.
+
+## Labs
+
+- How did Lab 1 go?
+- Lab 1 Sketch will be posted as soon as possible.
+- Lab 2 due Tuesday **2026-02-24** at Noon to Canvas. 
+
+## Progress on Semester Activities
+
+- Searching for a suitable OSIA paper, and developing a claim by **2-10**.
+- Building a proposal (due 3-3) for the course project
+  - I suggest that you have a clear idea of a data set no later than 2026-02-10, as well, so that you can run it by me in Class 5 (or sooner) and then work with the data in the focus week (No class on 2026-02-19).
+
+## Propensity Scores: Not Just For Matching
+
+- Direct (Regression) Adjustment using the PS
+- Subclassification / Stratification using the PS
+- Weighting using the Propensity Score
+- Combining Approaches for More Robust Estimation
+
+Foundations: Rosenbaum and Rubin 1983, 1984 and 1985
+
+## Direct Adjustment for the Propensity Score
+
+![](c03/figures/schematics/slides03_011.png)
+
+---
+
+![](c03/figures/schematics/slides03_012.png)
+
+## Propensity Score Adjustment
+
+Use the **linear propensity score** (logit of the raw propensity score) here, to avoid problems with having propensity score estimates near 0 or 1.
+
+- The linear propensity score ranges across the real number line, rather than being restricted to 0 and 1.
+- Rubin (2001) provides ways to think about the quality of balance necessary to justify regression models for our outcomes also work with linear propensity scores. We'll study these closely in Class 6.
+
+## Double Robust Estimates
+
+Adjusting for the propensity score is often (if not usually) done in *combination* with other propensity score approaches, like matching or weighting to form what are called **double robust** estimates.
+
+- We can use the propensity score to obtain a matched sample, then further adjust in our outcome model using the (linear) propensity score again, or perhaps individual covariates of special concern.
+- Similarly, we can combine multiple PS approaches in one study.
+
+# Subclassification using the Propensity Score
+
+## Propensity Score Subclassification / Stratification
+
+![](c03/figures/schematics/slides03_021.png)
+
+---
+
+![](c03/figures/schematics/slides03_022.png)
+
+---
+
+![](c03/figures/schematics/slides03_023.png)
+
+---
+
+![](c03/figures/schematics/slides03_024.png)
+
+---
+
+![](c03/figures/schematics/slides03_025.png)
+
+---
+
+![](c03/figures/schematics/slides03_026.png)
+
+---
+
+![](c03/figures/schematics/slides03_027.png)
+
+
+---
+
+![](c03/figures/schematics/slides03_028.png)
+
+
+# Weighting using the Propensity Score
+
+## Propensity Score Weighting
+
+Adjusting for the propensity score removes the bias associated with differences in the observed covariates in the exposed and control groups.
+
+We might **reweight** exposed and control observations (or just controls, sometimes) to make them representative of the population of interest.
+
+- We can get the benefits of matching while still using all of the collected data.
+
+## Propensity Weighting
+
+There are other potential benefits:
+
+- We can incorporate propensity weighting along with survey weighting, when oversampling is done, for instance.
+- We can incorporate weighting with regression adjustment on the propensity score, producing a double robust estimate.
+- PS methods generally lead to more reliable estimates of association than multiple regression, especially if there is a substantial selection or other overt bias.
+
+---
+
+![](c03/figures/schematics/sch_weight_01.png)
+
+---
+
+![](c03/figures/schematics/sch_weight_02.png)
+
+
+---
+
+![](c03/figures/schematics/sch_weight_03.png)
+
+
+---
+
+![](c03/figures/schematics/sch_weight_04.png)
+
+
+---
+
+![](c03/figures/schematics/sch_weight_05.png)
+
+## *ATT* Weighting with the PS
+
+ATT = average treatment effect on the treated
+
+- Let every exposed (treated) subject's weight be 1.
+- A control subject's weight is a function of its propensity for exposure
+$$
+w_{j} = \frac{PS_j}{1 - PS_j}
+$$
+
+ATT estimate = Average outcome for treated group - PS weighted outcome for control group
+
+## *ATE* Weighting with the PS
+
+Reweight **both** exposed and control subjects. If $PS_j$ is the propensity to be in the exposed group...
+
+$$
+w_j = \frac{1}{PS_j} \mbox{ for each exposed subject}
+$$
+
+$$
+w_j = \frac{1}{1 - PS_j} \mbox {for each control subject}
+$$
+
+## Rosenbaum, Chapter 4
+
+Adjustments for Measured Covariates
+
+### For Discussion
+
+- What was the most **important** thing you learned from reading Chapter 4?
+- What was the **muddiest**, least clear thing that arose in your reading?
+- What questions are at the front of your mind now?
+
+## Next Time (Class 4)
+
+Most of our lecture will walk through the `toy` example, which is a simple simulated observational study of a treatment on three outcomes (one quantitative, one binary, and one time-to-event) which we will use to demonstrate the completion of 13 tasks using R, which include:
+
+- Fitting a propensity score model
+- Assessing pre-adjustment balance of covariates
+- Estimating the effects of our treatment on our outcomes 
+
+## Class 4 will include...
+
+- Using matching on the propensity score
+- Using subclassification on the propensity score
+- Using direct adjustment for the propensity score
+- Using weighting on the propensity score
+
+Note we have three other (more realistic) examples we'll share in time: `lindner`, `dm2200` and `rhc`.
+
+## What Should I Do Before Class 4?
+
+- Read *Causal Inference* through Chapter 5
+- Get going on your project and OSIA selection.
+- [Sources](https://github.com/THOMASELOVE/500-sources): Normand 2001
+- Skim our [500-Examples page](https://thomaselove.github.io/500-examples/)
+
