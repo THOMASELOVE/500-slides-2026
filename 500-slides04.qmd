@@ -1,0 +1,259 @@
+---
+title: "500 Class 04"
+author: "Thomas E. Love"
+date: "2026-02-05"
+format:
+  revealjs: 
+    theme: dracula
+    self-contained: true
+    slide-number: true
+    footnotes-hover: true
+    preview-links: auto
+    date-format: iso
+    footer: "500 Class 4 | 2026-02-05 | <https://thomaselove.github.io/500-2026/>"
+---
+
+## Today's Agenda
+
+- The Toy Example
+- Normand 2001
+    - A matched analysis using propensity scores
+    - Inspiration for the Love plot
+- Rosenbaum, Chapter 5
+- The SUPPORT Study
+
+## The `toy` example
+
+Today's class involves a walk-through of the `toy` example, which is a simple simulated observational study of a treatment on three outcomes (one quantitative, one binary, and one time-to-event) which we will use to demonstrate the completion of 13 tasks using R, which include:
+
+- Fitting a propensity score model
+- Assessing pre-adjustment balance of covariates
+- Estimating the effects of our treatment on our outcomes 
+
+## The `toy` example
+
+- Using matching on the propensity score
+- Using subclassification on the propensity score
+- Using direct adjustment for the propensity score
+- Using weighting on the propensity score
+
+Note we have three other (more realistic) examples we'll share in time: `lindner`, `dm2200` and `rhc`.
+
+## The `toy` example
+
+The `toy` example presents methods for building and using propensity scores with simple simulated data.
+
+- The example uses 3 Rules from Rubin (2001) for determining when a sample comparison shows sufficient balance to allow for a reasonable regression model for the outcome. We'll discuss those in Class 6.
+- What to do in terms of a sensitivity analysis is discussed in the final section of the example, and we'll get to that in Class 7.
+
+## Next, we'll go the `toy` example
+
+- We'll find it at [our 500-examples page](https://thomaselove.github.io/500-examples/#the-toy-example)
+
+# After the `toy` example (and a break)
+
+## Normand (2001)
+
+![](c04/figures/normand_2001_01.png)
+
+## Normand (2001) Abstract {.smaller}
+
+We determined whether adherence to recommendations for coronary angiography more than 12 h after symptom onset but prior to hospital discharge after acute myocardial infarction (AMI) resulted in better survival. Using propensity scores, we created a matched retrospective sample of 19,568 Medicare patients hospitalized with AMI during 1994–1995 in the United States. Twenty-nine percent, 36%, and 34% of patients were judged necessary, appropriate, or uncertain, respectively, for angiography while 60% of those judged necessary received the procedure during the hospitalization. The 3-year survival benefit was largest for patients rated necessary [mean survival difference (95% CI): 17.6% (15.1, 20.1)] and smallest for those rated uncertain [8.8% (6.8, 10.7)]. Angiography recommendations appear to select patients who are likely to benefit from the procedure and the consequent interventions. Because of the magnitude of the benefit and of the number of patients involved, steps should be taken to replicate these findings.
+
+## Statistical Analysis (section 2.4) {.smaller}
+
+Because we collected detailed clinical information describing admission severity of the patient and characteristics of the hospital to which the patient was admitted, **we assumed that treatment (angiography vs. no angiography) was randomly assigned with probabilities that depended on the
+observed covariates alone**.
+
+We then employed a propensity score approach to compare survival between those receiving angiography ("cathed") and those who did not ("not cathed") within each category of appropriateness. The propensity score is a measure of the likelihood that a patient would have undergone angiography using the patient’s covariate scores.
+
+## Creating the matched sample {.smaller}
+
+To estimate the propensity scores, we fitted a logistic regression model in which the outcome was the log-odds of undergoing angiography more than 12 h after symptom onset but prior to discharge.
+
+{The covariates used in the propensity score} consisted of patient (demographic, comorbidity, admission severity) and hospital characteristics as well as interactions among the covariates.
+
+We assumed that missing observations were missing at random, implying that the mechanism by which data were missing is unrelated to information not contained in our observed data. For discrete-valued variables, we included a binary variable that represented “missing.” In the case of continuous-valued variables, we created two variables: a binary variable indicating whether the variable was measured and
+if measured, a continuous variable indicating the value of the variable.
+
+## The matched sample {.smaller}
+
+Once the model was estimated, we stratified the cohort by clinical indication, and within an indication, matched each patient who underwent angiography to a patient with closest estimated propensity score who did not. We included in our analyses only those matches that were within 0.60 of the pooled standard error of q(X) where q(X) is the estimated logit. This method of defining the closeness of a match is referred to caliper matching and is the observational study analogue of randomization in a clinical trial.
+
+Fig. 1 (next two slides) summarizes our methods for identifying and creating the matched sample.
+
+## Figure 1 (steps 1-2 of 4)
+
+![](c04/figures/normand_2001_02.png)
+
+## Figure 1 (steps 3-4 of 4)
+
+![](c04/figures/normand_2001_03.png)
+
+## Normand (2001) Table 1
+
+![](c04/figures/normand_2001_04.png)
+
+## Normand (2001) (from section 3.2)
+
+We matched 57% of the 17,304 cathed patients to noncathed patients using estimated propensity scores.
+
+The unmatched angiography patients were more likely to be admitted to large, teaching, urban hospitals with the capability to perform invasive cardiac procedures; were younger; were less sick; and had less comorbid disease compared to the angiography patients for whom we found matches. Prior to matching, the average predicted propensities to undergo angiography were 65% and 30% in the two groups; after matching, the propensities were within 4 percentage points.
+
+## Normand (2001) Start of Table 3
+
+![](c04/figures/normand_2001_05.png)
+
+## Normand (2001) Figure 3
+
+![](c04/figures/normand_2001_06.png)
+
+## Normand (2001) Table 4
+
+![](c04/figures/normand_2001_07.png)
+
+## Normand (2001) Discussion {.smaller}
+
+The propensity score approach, a technique that has been employed in other recent medical studies, reduces the collection of many confounding variables to a single variable that permits easy comparisons of group differences. Although we were successful in reducing the bias that may have resulted from inexact matching on observed covariates, we were only able to adequately match 57% of all patients who underwent angiography. The unmatched angiography patients were generally younger and healthier than the matched angiography patients and if included in the comparisons would have biased the effect of angiography towards a larger benefit. 
+
+Although the exclusion of the unmatched patients may have introduced a bias, their inclusion would have also compromised the comparability of the final matched groups. Because it is difficult to completely rule out all these biases, it is important for others to validate our findings.
+
+## Normand (2001) Discussion (last paragraph) {.smaller}
+
+In conclusion, coronary angiography following AMI was associated with increased survival for a relatively contemporary cohort of Medicare beneficiaries who had an AMI. The benefit was present in all categories of appropriateness that applied to these patients. Because of the magnitude of the benefit, the recent experiences of the patients, and the size of the group involved, the data suggest that not only is underuse of this procedure after AMI prevalent but may explain the lack of long-term survival differences between high-use regions and low-use regions. Because we were unable to match all patients who underwent coronary angiography, research should be undertaken to replicate our findings.
+
+## Rosenbaum Chapter 5
+
+Sensitivity to Unmeasured Covariates
+
+### For Discussion
+
+- What was the most **important** thing you learned from reading Chapter 5?
+- What was the **muddiest**, least clear thing that arose in your reading?
+
+# The SUPPORT study of Right Heart Catheterization
+
+## The SUPPORT Study
+
+Study to Understand Prognoses and Preferences for Outcomes and Risks of Treatments (Connors et al. 1996)
+
+- Goal: Examine the association between the use of right heart catheterization (RHC) during the first 24 hours in the ICU and outcomes
+- Outcomes: survival, length of stay, intensity and costs of care
+- Sample: 5,735 critically ill adult ICU patients in 9 disease categories
+- Study was prospective!
+
+---
+
+![](c04/figures/rhc_image.png)
+
+
+## Does RHC do more harm than good? 
+
+Prior (small) observational studies comparing RHC to non-RHC patients:
+
+- RR of death higher in RHC elderly patients than non-RHC elderly
+- RR of death higher in RHC patients with acute MI than non-RHC patients with MI
+- Patients with higher than expected RHC use had higher mortality
+
+## RHC worth doing?
+
+Big Problem: Selection Bias. Physicians (mostly) decide who gets RHC and who doesn't. 
+
+Why not a RCT?
+
+- RHC directly measures cardiac function
+- Some providers believe RHC is necessary to guide therapy for some critically ill patients
+- Procedure is very popular - existing studies haven't created equipoise
+
+## 81 predictors of RHC use {.smaller}
+
+Panel (7 specialists in clinical care) specified important variables related to the decision to use or not use a RHC.
+
+- Age, Sex, Race, Education, Income, Insurance
+- Primary and Secondary Disease category
+- Admission diagnosis category (12 levels)
+- ADL and DASI 2 weeks before admission, DNR status on day 1
+- Cancer (none, local, metastasized)
+- 2 month survival model prediction using baseline measures
+- Weight, temperature, BP, heart rate, respiratory rate
+- Comorbid illness (13 categories)
+- Body chemistry (pH, WBC, PaCO$_2$, etc.)
+
+## RHC vs. Non-RHC patients
+
+RHC patients were more likely to
+
+- Be male, have private insurance, enter the study with ARF, MOSF or CHF
+
+RHC patients were less likely to
+
+- Be over 80 years old, have cancer, have a DNR order in the first 24 hours of hospitalization
+
+## RHC vs. Non-RHC patients
+
+RHC patients had
+
+- Fewer comorbid conditions, 
+- More abnormal results of vital signs, WBC count, albumin, creatinine, etc.
+- Lower model probability of 2-month survival
+
+## Overlap in the RHC data?
+
+```{r, echo = FALSE, fig.align = "center"}
+knitr::include_graphics("c04/figures/rhc_overlap.png")
+```
+
+## How Much Overlap do we want?
+
+![](c04/figures/overlap.png)
+
+## Right Heart Catheterization
+
+- 5,735 hospitalized patients in SUPPORT study
+- 2,184 treated (RHC) and 3,551 controls (no RHC).
+    
+Reweight each treated patient by 1/PS, and each control patient by 1/(1-PS).
+
+## The perils of selective weighting
+
+- PS model estimated by Hirano and Imbens^[Hirano and Imbens 2001, Connors 1996, Hirano, Imbens & Ridder 2003] using 57 of 72 available covariates 
+    - Selected only those with |t| > 2.0
+    - Serum potassium, for instance, prior to weighting showed a mean of 4.04 in the RHC group and 4.07 in the "No RHC" group, for a t = -0.99, so it was not included in the propensity model.
+
+Results of this Weighting Approach on the next slide...
+
+---
+
+![](c04/figures/rhc_weights1.png)
+
+## Effectiveness of Weighting
+
+- The weighting is based on a propensity model including 57 of the 72 covariates.
+- Serum potassium not included in this PS.
+- Most means are much closer, although six variables become less balanced (larger absolute t statistic) after weighting.  None of these six were in the 57-variable PS model.
+- Weighting by the propensity score appears to balance control and treatment groups well.
+
+## A "Double Robust" Estimator
+
+1. Fit propensity score model
+2. Weight the individual subjects (ATT, commonly) by the propensity score.
+3. Directly adjust (via regression) for the propensity score in estimating the treatment effect.
+
+## "Double Robust" Estimator: Why?
+
+- Forces you to think hard about selection.
+- You don't care about parsimony in the PS, so you can maximize predictive value.
+- Can fit a very complex PS model, and a smaller outcome model.
+- Some hope that if PS model or weighting is helpful, the combination will be helpful.
+
+## Coming Up
+
+- Choosing a propensity score matching approach
+- Working through the dm2200 example and lindner examples
+
+### What Should I Be Doing Before Class 5?
+
+- Read *Causal Inference* through Chapter 6
+- [Sources](https://github.com/THOMASELOVE/500-sources)
+  - Austin 2014, Ahmed MI 2012
+- Skim our [500-Examples page](https://thomaselove.github.io/500-examples/)
