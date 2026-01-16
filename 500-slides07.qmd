@@ -1,0 +1,616 @@
+---
+title: "500 Class 07"
+author: "Thomas E. Love"
+date: "2026-03-05"
+format:
+  revealjs: 
+    theme: dracula
+    self-contained: true
+    slide-number: true
+    footnotes-hover: true
+    preview-links: auto
+    date-format: iso
+    footer: "500 Class 7 | 2026-03-05 | <https://thomaselove.github.io/500-2026/>"
+---
+
+## Today's Agenda
+
+- SUPPORT and Right Heart Catheterization
+- Sensitivity Analysis for Propensity-Matched Studies
+  - Surgery vs. Medicine for CAD
+  - Using R to estimate $\Gamma$ (gamma)
+  - The `toy` example: Sections 18 and 19
+- Project Proposal Discussions
+- Discussion of D'Agostino Jr (1998)
+
+## R Packages and Setup
+
+```{r}
+#| echo: true
+
+knitr::opts_chunk$set(comment = NA)
+
+library(Matching)
+library(rbounds)
+library(janitor)
+library(tidyverse)
+```
+
+
+# Right Heart Catheterization and the SUPPORT Study (see Class 04, too)
+
+## The SUPPORT Study (RHC data)
+
+Connors et al. (1996) used a logistic regression model to develop a propensity score, then: 
+
+- matched RHC to non-RHC patients and 
+- adjusted for propensity score in outcome models, 
+- followed by sensitivity analyses. 
+
+*Key Conclusions*: RHC patients had decreased survival time, and any unmeasured confounder would have to be somewhat strong to explain away the results.
+
+---
+
+![](c07/figures/rhc_image.png)
+
+
+## 81 predictors of RHC use {.smaller}
+
+Panel (7 specialists in clinical care) specified important variables related to the decision to use or not use a RHC.
+
+- Age, Sex, Race, Education, Income, Insurance
+- Primary and Secondary Disease category
+- Admission diagnosis category (12 levels)
+- ADL and DASI 2 weeks before admission, DNR status on day 1
+- Cancer (none, local, metastasized)
+- 2 month survival model prediction using baseline measures
+- Weight, temperature, BP, heart rate, respiratory rate
+- Comorbid illness (13 categories)
+- Body chemistry (pH, WBC, PaCO$_2$, etc.)
+
+## What's in the RHC Example? 1
+
+[Our 500-examples page](https://thomaselove.github.io/500-examples/)
+
+- exposure/treatment is the installation of a Swan-Ganz (right heart) catheter on day 1
+- 3 outcomes 
+  - binary: in-study mortality
+  - quantitative: hospital length of stay, in days
+  - time-to-event: time to death (with censoring)
+
+## What's in the RHC Example? 2
+
+- 50 covariates, including socio-demographics, presentation and diagnoses at admission, comorbid illness and transfer status, summary measures of presentation and lab results on day 1
+
+### What is included?
+
+- Unadjusted analyses
+- Estimating the PS and checking balance before adjustment
+
+## Matching in RHC Example
+
+- Six different Matching Approaches and resulting outcomes
+    - 1:1 greedy matching without replacement
+    - 1:2 greedy matching without replacement
+    - 1:1 matching without replacement using genetic search
+    - 1:1 greedy matching with replacement
+    - 1:1 caliper matching without replacement
+    - 1:2 greedy matching with replacement
+
+## Other Analyses in RHC Example
+
+- *ATT weighting* using TWANG
+- *Double Robust (weighting + regression)* analysis
+- **Sensitivity Analyses** after Matching
+
+# Sensitivity Analysis for Matched Samples
+
+## Stability Analyses
+
+- Are our conclusions mere artifacts of analytic decisions, or are they stable over analyses that differ in (apparently) innocuous ways?
+- Examine a series of discrete decisions, hoping conclusions mostly don't change if the decision is changed.
+
+This is part of the general class of *sensitivity analyses* but we also have a specific formal idea in mind for those analyses, when we have matched samples.
+
+## Formal Sensitivity Analyses
+
+- How much do plausible changes in assumptions change conclusions?
+- How much hidden bias would have to be present to alter the study's conclusions?
+
+We want to assess the potential for **unmeasured** covariates to change our conclusions.
+
+## What sort of unmeasured covariate?
+
+- To maximize trouble, the unmeasured covariate must be independent of the variables in our propensity model.
+    - We missed a dimension of the problem, or our measure is terribly weak.
+    - This is part of the motivation to be inclusive in building the PS model.
+
+## Idealized Standards for a Sensitivity Evaluation
+
+- Logic, Theory and Empirical Evidence
+- "It is unlikely that a non-huge hidden bias would substantially change our conclusions"
+    - Measured and incorporated every major known factor that we could identify.
+    - Effects on health outcomes were generally large, consistent with earlier work and clinically plausible.
+
+## Most Problematic Issue
+
+An omitted variable is most likely to change our conclusions about the exposure if it is
+
+- closely related to the outcome,
+- seriously imbalanced by exposure,
+- uncorrelated with the propensity score.
+
+## Does PS Matching Balance "Omitted" Covariates?
+
+**No.**
+
+- We fit a published PS model to data from the RHC study, using 82 covariates.
+- Then we obtained data on 17 other covariates, not included in the PS model.
+
+## Love et al 2003 abstract
+
+Corr. with PS | Covariates | Balance Improved | Median Bias Reduction
+---------------: | ---------: | ----------------: | ----------------:
+Sig. (*p* < .05) | 10 | 9 (90%) | 45%
+Not Sig. | 7 | 2 (29%) | -36%
+
+## Sensitivity Analysis Approach
+
+- When describing possible hidden bias, we refer to characteristics we did not observe, and therefore did not control for in PS.
+- If our study was randomized, or somehow free of hidden bias, we would have strong evidence of a treatment effect.
+- To explain away the observed effect, an unobserved covariate would need to increase the odds of exposure to treatment and the odds of outcome by at least a factor of $\Gamma$.
+
+## The Role of Sensitivity Analysis
+
+- Cameron and Pauling (1976, 1978) concluded Vitamin C increased survival time of colon cancer patients.
+- The result was not sensitive to an unmeasured binary covariate which led to a 10-fold increase in odds of exposure to vitamin C and was a perfect predictor of the outcome^[See Rosenbaum 2002, 2017].
+
+## Vitamin C and Colon Cancer
+
+- Sensitivity analysis looks great, yet the findings were contradicted in a Mayo Clinic RCT.
+- Conclusion: Sensitivity analyses cannot indicate what biases are present, it can only indicate the magnitude needed to alter the conclusion.
+
+# Surgery vs. Medicine for Coronary Artery Disease
+
+## CAD: Surgery or Medicine
+
+Coronary bypass surgery or medical/drug therapy for CAD^[See Rosenbaum and Rubin 1983, 1984]?
+
+- 1,515 subjects
+    - 590 surgical patients (39%), the rest medical
+- PS included 74 observed covariates
+    - Hemodynamic, Angiographic, Lab and Exercise Test Results
+    - Patient histories, and demographics
+
+## Results
+
+- Stratified into PS quintiles, then combined estimates of Pr(sustained improvement at 6 mo).
+
+Substantial Improvement | Prob (SE)
+-----------------------: | ----------------:
+Medical | 0.359 (0.042)
+Surgical | 0.669 (0.059)
+
+Conclusion: Pr(improved | Surgery) > Pr(improved | medicine)
+
+## Sensitivity of Conclusion
+
+Conclusion: Pr(improved | Surgery) > Pr(improved | medicine)
+
+- A hypothetical unobserved binary covariate would have to **more than triple** the odds of surgery and **more than triple** the odds of improvement, before altering the conclusion^[See Rosenbaum and Rubin 1983, 1984].
+
+## Goal of a Formal Sensitivity Analysis
+
+Replace a *qualitative* and general statement that applies to all observational studies
+
+- "The association we observe between treatment and outcome does not imply causation."
+- "Hidden biases can explain observed associations."
+
+with a *quantitative* statement *specific* to this study
+
+- "To explain the association seen in this study, one would need a hidden bias of this magnitude."
+
+## Hidden Bias
+
+- Two units (patients, subjects, whatever) with the same observed covariates have different chances of receiving the exposure.
+- If the association is strong, the hidden bias needed to explain it would be large.  
+- If a study is free of hidden bias (one example: RCT), this means that any two units that appear similar in terms of their observed covariates actually have the same chance of assignment to exposure.
+
+
+## Design Sensitivity and $\Gamma$
+
+How would inferences about treatment effects be altered by hidden biases of various magnitudes? 
+
+- How large would these differences have to be to alter the qualitative conclusions of the study?
+
+$\Gamma$ measures degree of departure from a study that is free of hidden bias.  A sensitivity analysis will consider possible values of $\Gamma$ and show how the inference might change.  
+
+## Design Sensitivity Parameter $\Gamma$
+
+- $\Gamma$ describes the odds ratio comparing the odds of being selected for treatment for two units who are similar on all observed covariates.
+    - $\Gamma$ = 1 if the study is free of hidden bias 
+        - Subjects with the same observed covariates have the same odds of exposure. 
+
+## Design Sensitivity Parameter $\Gamma$
+
+- If $\Gamma$ = 2, then two units who appear similar, who have the same set of observed covariates **X**, could differ in their odds of receiving the treatment by as much as a factor of 2.
+- Essentially, if $\Gamma$ = 2.5, one subject could be 2.5 times as likely as the other to receive the exposure, despite having identical covariate values.
+
+## Relating $\Gamma$ to Sensitivity Statements
+
+- A study is **sensitive** if values of $\Gamma$ close to 1 could lead to inferences that are very different from those obtained assuming the study is free of hidden bias.  
+- A study is *insensitive* if extreme values of $\Gamma$ are required to alter the inference.
+
+"To attribute the (observed significant) outcome to an unobserved covariate rather than to the treatment, that unobserved covariate has to increase the odds of treatment by a factor of $\Gamma$, and also predict our outcome quite well."
+
+# Estimating $\Gamma$ using R
+
+## A Simulated Data Set
+
+```{r}
+#| echo: true
+sim_obs <- read_csv("c07/data/sim_sens_2020.csv",
+                    show_col_types = FALSE) |> 
+  clean_names()
+
+sim_obs
+```
+
+## `sim_obs` data
+
+```{r}
+#| echo: true
+summary(sim_obs)
+```
+
+## Study A: A Binary Outcome
+
+```{r}
+#| echo: true
+sim_obs |> tabyl(treatment, out_binary) |> 
+    adorn_totals() |>
+    adorn_percentages() |>
+    adorn_pct_formatting() |>
+    adorn_ns(position = "front")
+```
+
+## Binary Outcome (1:1 Match)
+
+```{r}
+#| echo: true
+set.seed(500)
+m.obj <- Match(Y = sim_obs$out_binary, 
+               Tr = as.logical(sim_obs$treatment), 
+               X = sim_obs$propensity, 
+               M = 1, replace = FALSE)
+```
+
+Why set a seed? Because if you don't, the match can change on you (tied propensity scores...)
+
+```{r}
+#| echo: true
+summary(m.obj)
+```
+
+## Create Matched Outcomes 2x2 Table for McNemar's Test
+
+```{r}
+#| echo: true
+
+## Extract Matched Outcome Data
+Rc <- m.obj$mdata$Y[m.obj$mdata$Tr==0]
+Rt <- m.obj$mdata$Y[m.obj$mdata$Tr==1]
+
+## Table of Matched Outcomes for McNemar's Test
+out.tab <- matrix(c(table(Rc, Rt)), nrow = 2)
+out.tab
+```
+
+## Estimating $\Gamma$ with `binarysens`
+
+```{r}
+#| echo: true
+binarysens(out.tab[2,1], out.tab[1,2], 
+           Gamma = 2, GammaInc = 0.25)
+```
+
+## Making our $\Gamma$ Estimate more precise: `binarysens`
+
+```{r}
+#| echo: true
+binarysens(out.tab[2,1], out.tab[1,2], 
+           Gamma = 1.75, GammaInc = 0.05)$bounds |>
+  tibble() |> slice(11:17)
+```
+
+## OK, $\Gamma$ is about 1.6. What next?
+
+- Assuming no hidden bias, the propensity-matched result describes a strong relationship (McNemar odds ratio = 2.52, with 95% CI (1.58, 4.03)) between treatment receipt and our binary outcome.
+- To attribute the higher rate of our binary outcome to an unobserved covariate rather than to the effect of our treatment, that unobserved covariate would need to produce more than a 60% increase (or a $\Gamma$ = 1.6-fold increase) in the odds of receiving the treatment, and be a very strong predictor of the binary outcome.
+
+## Obtaining the Matched Sample
+
+```{r}
+#| echo: true
+matches <- factor(rep(m.obj$index.treated, 2))
+
+sim.matchedsample1 <- 
+  cbind(matches, 
+        sim_obs[c(m.obj$index.control, 
+                  m.obj$index.treated),]) |>
+  arrange(matches)
+
+head(sim.matchedsample1)
+```
+
+## Building a 2x2 table from the Matched Sample
+
+```{r}
+#| echo: true
+tmp <- sim.matchedsample1 |> 
+  mutate(res = 10*treatment + out_binary) |>
+    group_by(matches) |>
+    summarize(out.treated = out_binary[2], 
+              out.control = out_binary[1]) 
+
+tmp |> tabyl(out.control, out.treated) |> adorn_title()
+```
+
+## The McNemar Test
+
+2x2 Table         | Treated has `out1` | Treated no `out1`
+----------------: | ---------------: | --------------:
+Control has `out1`  | `r (tmp |> count(out.treated, out.control) |> mutate(res = 1:4) |> filter(res == 4) |> select(n) -> a)` | `r (tmp |> count(out.treated, out.control) |> mutate(res = 1:4) |> filter(res == 2) |> select(n) -> c)`
+Control no `out1`   | `r (tmp |> count(out.treated, out.control) |> mutate(res = 1:4) |> filter(res == 3) |> select(n) -> b)` | `r (tmp |> count(out.treated, out.control) |> mutate(res = 1:4) |> filter(res == 1) |> select(n) -> d)`
+
+We have `r a + b + c + d` matched pairs, and `r b + c` pairs in the off-diagonal. There are `r b` pairs where only the treated subject has the outcome. Assuming no hidden bias, a 95% CI for the McNemar odds ratio (68/27 or `r round(68/27,2)`) is...
+
+```{r}
+#| echo: true
+ci.p <- prop.test(x = 68, n = 68+27)$conf
+ci.odds <- ci.p/(1 - ci.p)
+ci.odds
+```
+
+## Study B: A Quantitative Outcome
+
+```{r}
+#| echo: true
+set.seed(500)
+m.obj2 <- Match(Y = sim_obs$out_quant, 
+               Tr = as.logical(sim_obs$treatment), 
+               X = sim_obs$propensity, 
+               M = 1, replace = FALSE)
+
+summary(m.obj2)
+```
+
+## Create Matched Outcomes Table
+
+```{r}
+#| echo: true
+
+## Extract Matched Outcome Data
+Rc2 <- m.obj2$mdata$Y[m.obj2$mdata$Tr==0]
+Rt2 <- m.obj2$mdata$Y[m.obj2$mdata$Tr==1]
+```
+
+### Using `psens` to estimate $\Gamma$
+
+```{r}
+#| echo: true
+psens(Rc2, Rt2, Gamma = 2.5, GammaInc = 0.25)
+```
+
+## Refining our $\Gamma$ estimate
+
+```{r}
+#| echo: true
+psens(Rc2, Rt2, Gamma = 2, GammaInc = 0.05)$bounds |>
+  tibble() |> slice(13:18)
+```
+
+## Rosenbaum Bounds: Hodges-Lehmann Estimate
+
+```{r}
+#| echo: true
+hlsens(Rc2, Rt2, pr = 0.1, Gamma = 2.5, GammaInc = 0.25)
+```
+
+## Study C: Survival (Time to Event) Outcome
+
+I have a spreadsheet to help with this. We need to identify the number of pairs with a clear winner, and the number of those "clear winner" pairs where the winner is the "treatment = 1" subject. 
+
+```{r}
+#| echo: true
+match3 <- sim.matchedsample1 |> tibble() |>
+  select(matches, treatment, censored, out_time, 
+         subject, propensity) |>
+  arrange(matches, -treatment)
+
+head(match3, 2)
+```
+
+## Determining "Clear Winners" (1)
+
+**What if there is no censoring?**
+
+```{r}
+#| echo: true
+match3 |> filter(matches %in% c(302, 308))
+```
+
+- Which subject in match 302 has the longer `out_time`?
+- Which subject in match 308 has the longer `out_time`?
+- Will we have a clear winner if neither subject's time is censored?
+
+## Determining "Clear Winners" (2)
+
+**What if both subjects in the pair are censored?**
+
+```{r}
+#| echo: true
+match3 |> filter(matches == 310)
+```
+
+- Which subject in match 310 has the longer `out_time`?
+- Will we have a clear winner if both subjects' time is censored?
+
+## Determining "Clear Winners" (3)
+
+**What if only the treated subject in the pair is censored?**
+
+```{r}
+#| echo: true
+match3 |> filter(matches %in% c(301, 307))
+```
+
+- Which subject in match 301 has the longer `out_time`?
+- Which subject in match 307 has the longer `out_time`?
+- Will we have a clear winner if exactly one subject's time is censored?
+
+## Determining "Clear Winners" (4)
+
+**What if only the control subject in the pair is censored?**
+
+```{r}
+#| echo: true
+match3 |> filter(matches %in% c(305, 337))
+```
+
+- Which subject in match 305 has the longer `out_time`?
+- Which subject in match 337 has the longer `out_time`?
+- How do we know if we will have a clear winner if exactly one subject's time is censored?
+
+## Hand-Counted Results, 1
+
+- If both treated and control are censored, no clear winner (2 pairs)
+- If both treated and control are NOT censored, clear winner (134 pairs) unless there is a tie (0 pairs)
+    - In 73 of those 134 pairs, the treated subject had the longer `out_time`.
+
+## Hand-Counted Results, 2
+
+- If either treated or control is censored but not both, then there is a clear winner only if the censored subject had the longer `out_time`.
+    - 10 pairs where treated subject clearly wins despite being censored.
+    - 12 pairs where control subject clearly wins despite being censored.
+
+So, in total, we have 134 + 10 + 12 = 156 pairs with a clear winner. In 83 of those, the treated subject had the longer `out_time`.
+
+## Result from the Spreadsheet
+
+![](c07/figures/ss02.png)
+
+## What if it had been 113 out of 156 instead?
+
+![](c07/figures/ss03.png)
+
+## Our PS "Formula" for the Heart Failure papers
+
+1. Identify available data related to selection for the exposure, and to risk for the outcome.
+2. Demonstrate need for PS modeling (imbalance in key characteristics), and evaluate PS balance after matching, usually through standardized difference plots (usually significance, too, unfortunately.)
+3. Model exposure effect (Cox models stratified by matched pair identifiers, typically.)
+4. Formal sensitivity analysis **if** effect is significant.
+
+## The `toy` example
+
+Section 18. What is a Sensitivity Analysis for Matched Samples?
+
+We’ll study a formal sensitivity analysis approach for matched samples. Note well that this specific approach is appropriate only when we have
+
+- a p value below our desired significance level
+- from a matched samples analysis using the propensity score.
+
+## Goal of a Formal Sensitivity Analysis
+
+A formal sensitivity analysis asks: How would inferences about treatment effects be altered by hidden biases of various magnitudes? How large would these differences have to be to alter the qualitative conclusions of the study?
+
+### Interpreting the Sensitivity Parameter $\Gamma$
+
+$\Gamma$ is a measure of the degree of departure from a study that is free of hidden bias. We will specify different levels of hidden bias to see how large a $\Gamma$ we can have while still retaining the fundamental conclusions of the matched analysis.
+
+## Sensitivity and $\Gamma$
+
+A sensitivity analysis will consider possible values of $\Gamma$ and show how the inference for our outcomes might change under different levels of hidden bias, as indexed by $\Gamma$.
+
+- A study is sensitive if values of $\Gamma$ close to 1 could lead to inferences that are very different from those obtained assuming the study is free of hidden bias.
+- A study is insensitive (a good thing here) if extreme values of $\Gamma$ are required to alter the inference.
+
+
+## Using the `rbounds` package
+
+Section 19 of the [toy example](https://thomaselove.github.io/500-examples/) provides a detailed example for a quantitative outcome, and notes that `rbounds` has additional functions to help evaluate sensitivity when we have a binary outcome.
+
+- The [RHC (right heart cath) example](https://thomaselove.github.io/500-examples/) provides detailed examples for all three types of outcomes, in section 22.
+
+# This might be a place for a **break**.
+
+## Project Proposals Discussion
+
+Details in class.
+
+# D'Agostino Jr (1998) Tutorial
+
+---
+
+![](c07/figures/dag1.png)
+
+## Summary 1
+
+In observational studies, investigators have no control over the treatment assignment. The treated and non-treated (that is, control) groups may have large differences on their observed covariates, and these differences can lead to biased estimates of treatment effects. 
+
+- Even traditional covariance analysis adjustments may be inadequate to eliminate this bias. 
+
+## Summary 2
+
+The propensity score, defined as the conditional probability of being treated given the covariates, can be used to balance the covariates in the two groups, and therefore reduce this bias. 
+
+- In order to estimate the propensity score, one must model the distribution of the treatment indicator variable given the observed covariates. 
+
+## Summary 3
+
+Once estimated the propensity score can be used to reduce bias through matching, stratification (subclassification), regression adjustment, or some combination of all three. 
+
+- In this tutorial we discuss the uses of propensity score methods for bias reduction, give references to the literature and illustrate the uses through applied examples.
+
+## Matching
+
+Discussion of three main techniques (building on Rosenbaum and Rubin)
+
+- nearest available matching on the estimated propensity score
+- Mahalanobis metric matching including the propensity score
+- nearest available Mahalanobis metric matching within calipers defined by the propensity score, which, essentially, combines the first two methods into one.
+
+## Applied Example: March of Dimes Matching
+
+![](c07/figures/dag2.png)
+
+## After Mahalanobis matching
+
+![](c07/figures/dag3.png)
+
+## Other Methods in D'Agostino Jr (1998)
+
+- Stratification
+    - Example from the Active Management of Labor Trial
+- Regression (Direct) Adjustment
+    - refers to two published studies: Berk and Newton (1985) and to Muller et al. (1986)
+- Additional research work largely focused (in 1998) on missing data
+
+## Coming Up in Class 8
+
+- Remember we don't have class next week (Spring Break)
+    - Sarah will hold her TA hours on both Sundays from 2 to 3:30 PM.
+- Foundations of Instrumental Variables
+- Comparing Methods for Addressing Bias
+- Full and Optimal Full Matching
+- How did Lab 3 go?
+- Rosenbaum, Chapter 7 discussion
+
+## What Should I Be Doing?
+
+- OSIA and Project Development
+- [Lab 3](https://thomaselove.github.io/500-2026/lab3.html) due Tuesday 2026-03-17 at noon.
+- Read Rosenbaum Chapter 7 (Natural Experiments, Discontinuities and Instruments)
+- Read Whitehouse (2007) from *Wall Street Journal*
+- Skim Landrum and Ayanian (2001) and Tanenbaum (2017)
+
