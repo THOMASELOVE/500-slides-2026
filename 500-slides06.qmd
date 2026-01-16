@@ -1,0 +1,812 @@
+---
+title: "500 Class 06"
+author: "Thomas E. Love"
+date: "2026-02-26"
+format:
+  revealjs: 
+    theme: dracula
+    self-contained: true
+    slide-number: true
+    footnotes-hover: true
+    preview-links: auto
+    date-format: iso
+    footer: "500 Class 6 | 2026-02-26 | <https://thomaselove.github.io/500-2026/>"
+---
+
+## Today's Agenda
+
+- Designing Observational Studies (Rubin, 2001)
+- Rubin's Rules
+  - in the `toy`, `lindner` and `dm2200` examples
+- Austin and Mamdani (2006) Example
+- Discussion of Lab 2
+- Kubo et al. (2020): Thinking about OSIA
+
+# Designing Observational Studies (Rubin 2001) {.unnumbered}
+
+## On Designing Observational Studies
+
+- Exert as much experimental control as possible
+- Carefully consider the selection process
+- Actively collect data to reveal potential biases
+
+> "Care in design and implementation will be rewarded with useful and clear study conclusions... Elaborate analytical methods will not salvage poor design or implementation of a study."  -- NAS report (quoted in Rosenbaum p. 368)
+
+But **HOW**?
+
+## Rubin 2001
+
+On Designing an Observational Study with the Propensity Score
+
+![](c06/figures/rubin0.png)
+
+## Rubin 2001 Abstract
+
+![](c06/figures/rubin1.png)
+
+## Designing an Observational Study without access to the outcome data
+
+- Propensity score methods can be used to help design the OS without seeing any outcomes.
+    + Propensity score is a function only of covariates, not of outcomes.
+
+
+### The key insight from Rubin (2001) 
+
+Repeated analyses attempting to balance covariate distributions across treatment groups **do not bias** estimates of the treatment's effect on outcome variables.
+
+
+## Designing Observational Studies
+
+- The Importance of Covariate (PS) Overlap 
+- How To Check for Overlap Effectively
+- Designing Like You're Doing an Experiment
+- Using Matching, Subclassification and Weighting
+- Propensity Scores are "Fair Game" - No Outcomes!
+
+## Design Goal
+
+In order to extract information on treatment effect from an observational study, we need to be able to compare "identical" people who receive different treatments. 
+
+**Goal**: Use propensity scores to assemble treatment groups that have comparable distributions on all measured covariates.
+
+**Issue 1**: Overlap
+
+## How much overlap in the covariates do we want?
+
+![](c06/figures/rubin2.png)
+
+## What if the exposure groups overlap, but minimally?
+
+![](c06/figures/rubin3.png)
+
+## Initial Phases of Ideal Study Design
+
+Specify population, exposures/treatments, outcomes and covariates.
+
+- Collect treatment and covariate information, and model treatment assignment with the propensity score.
+- Use propensity scores (through matching, stratification, reweighting) to reduce bias.
+
+## Checking Balance
+
+- Check for covariate balance across the treatment groups and iterate through process.
+    + If the treatment and control groups have the same distribution of propensity scores, then they have the same distribution of all observed covariates, just as in a randomized experiment.
+    + Of course, propensity scores are only guaranteed to balance the observed covariates, while randomized experiments can stochastically balance unobserved, as well.
+
+## Rich and Poor Covariate Sets
+
+- With a rich set of covariates, adjustments for hidden covariates may be less critical.
+- With less rich covariate sets, we may need to do more, say, try to find an instrument.
+
+As Rubin mentions in the Abstract, our conclusion after the initial design stage may be that the treatment and control groups are too far apart to produce reliable effect estimates without heroic modeling assumptions.
+
+## Design using Propensity Scores
+
+- Matching
+- Subclassification / Stratification
+- Weighting
+
+**Goal**: Assemble groups of treated and control units such that within each group the distribution of covariates is balanced.
+
+Allows us to attribute outcome differences to the effect of treatment vs. control.
+
+## Why Work This Hard in the Initial Design Stage?
+
+- Options narrow as an investigation proceeds.
+- No harm, no foul.
+    + Since no outcome data are available to the PS, nothing based on the PS here biases estimation of treatment effects.
+- Balancing covariates / PS makes subsequent model-based adjustments more reliable.
+
+## Why Work This Hard?
+
+Key point is that model adjustments can be extremely unreliable when the treatment groups are far apart on covariates. So we need to avoid that. 
+
+"Balancing" helps in terms of assessing covariance, relative risk, subsequent adjustments, etc.
+
+
+## **Matching** for Design
+
+- Pair up treated and control subjects with similar values of the propensity score, discarding all unmatched units.
+    + Not limited to 1-1 matches, can do 1-many, etc.
+- Can find an *optimal* full match using `optmatch` in R, without discarding any units, then follow with adjustments.
+    + Technically more valid, but difficult sell in practice.
+- Common: One-one Mahalanobis matching within calipers defined by logit(propensity).
+
+## **Subclassification** for Design
+
+- Rank all subjects by their propensity score and then create subclasses by imposing boundaries.
+- Subclasses therefore have treated and control units with similar values of propensity score.
+- Often use 5 subclasses of equal size should remove 90% or more of the bias due to the observed covariates in the propensity score.
+
+## **Weighting** for Design
+
+Estimate propensity scores for each subject, so that PS = prob(treatment received | covariates)
+
+Rubin describes the ATE approach to weighting.
+
+- Weights for treated subjects: $\frac{1}{PS}$. 
+- Weights for control subjects: $\frac{1}{1-PS}$
+
+Of course, we could also consider ATT weights.
+
+## When Can We Move On?
+
+Three conditions which must all apply for regression adjustment to be trustworthy:
+
+1. Difference in the mean linear propensity score [logit(PS)] in the two comparison groups must be small.
+2. Ratio of variances of linear propensity scores in the two groups must be close to 1.
+3. Ratio of variances of the "residuals" of the covariates after PS adjustment close to 1.
+
+I sometimes refer to these as "Rubin's Rules"...
+
+## Three Rules (page 174, Rubin 2001)
+
+![](c06/figures/rubin4.png)
+
+## Assessing Balance on the *Linear* rather than *Raw* Propensity Score
+
+- *logit*(PS) is more relevant for assessing whether linear modeling adjustments work.
+- *logit*(PS) tend to have more benign (variances closer, greater symmetry) distributions.
+- *logit*(PS) are more closely related to benchmarks in the literature on adjustments for covariates based on linearity assumptions.
+
+## Rubin's Rule 1
+
+1. Difference in the means of the propensity scores in the two groups being compared.
+    - Estimate propensity scores for all subjects.
+    - Take logit(PS) for each subject (normalize).
+    - Find SD = standard deviation of logit(PS) across all subjects (treated and control).
+    - Mean logit(PS) for treated group should be within 0.5 SD of control group's mean logit(PS). 
+    
+## Rubin's Rule 2 in operation
+
+2. Variance ratio of propensity scores in the two groups being compared should be close to 1.
+    + Estimate propensity scores for all subjects.
+    + Take logit(PS) for each subject (normalize).
+    + Find variance of logit(PS) across treated subjects, and divide it by the variance of logit(PS) across control subjects.
+    + Variance ratio should be close to 1. Ratios of 0.5 and 2.0 are far too extreme: we often try for (4/5, 5/4).
+    
+## Code for unadjusted `toy` sample
+
+### Rule 1
+
+Often we calculate a standardized difference here.
+
+```
+rubin1.unadj <- with(toy, abs(100*(mean(linps[treated==1]) - 
+                                     mean(linps[treated==0])) / 
+                                       sd(linps)))
+```
+
+### Rule 2
+    
+```
+rubin2.unadj <-with(toy, var(linps[treated==1]) /
+                         var(linps[treated==0]))
+```
+
+## Rubin's Rule 3 in operation
+
+3. Variance ratio of "residuals" close to 1.
+    - Estimate propensity scores for all subjects.
+    - For each covariate, regress the original value of the covariate for each subject on logit(PS) and take the residual of this regression.
+    - For each covariate, divide variance of the residuals within treatment group by variance of the residuals within  control group.
+    - For each covariate, the variance ratio should also be near 1.
+    
+## `rubin3` function for `toy` example
+
+```
+## General function rubin3 to help calculate Rubin's Rule 3
+rubin3 <- function(data, covlist, linps) {
+  covlist2 <- as.matrix(covlist)
+  res <- NA
+  for(i in 1:ncol(covlist2)) {
+    cov <- as.numeric(covlist2[,i])
+    num <- var(resid(lm(cov ~ data$linps))[data$treated==1])
+    den <- var(resid(lm(cov ~ data$linps))[data$treated==0])
+    res[i] <- round(num/den, 3)
+  }
+  names(res) <- names(covlist)
+  print(res)
+}
+```
+
+# The Data (from Rubin 2001)
+
+## National Medical Examination Survey
+
+- Large nationally representative data base of nearly 30,000 adults, calendar year 1987
+- Modern related efforts are folded into [NHANES](http://www.cdc.gov/nchs/nhanes.htm)
+
+**Goal**: objective observational study on the causal effects of smoking and the effect of the tobacco companies' alleged misconduct
+
+## NMES Covariates for Smoking Study
+
+- Age, Sex, Race, Marital Status, Education, etc.
+- Detailed smoking information
+    + Classification of subjects as never smokers, former smokers and current smokers
+    + Further classifications possible by length and density of smoking behaviors
+    + Also can look at years since quitting for former smokers
+
+## NMES Objects of Inference
+
+- Smoking Attributable Fractions
+- Conduct Attributable Fractions
+- Relative Expenditure Risks
+
+All based on comparisons of specific health-related expenditures (or disease rates) 
+
+Comparisons of smokers with "never smokers" who have same covariate values, as a function of dosage and covariates
+
+## Rubin's Design Goal
+
+Create samples of smokers and never smokers in NMES with the same multivariate distribution of covariates.
+
+- Males and Females treated separately.
+- We'll focus first on Male "Current Smokers" vs. Male "Never Smokers"
+    + 3510 Male "Current Smokers" in the pool
+    + 4297 Male "Never Smokers"" as controls
+- Fit propensity for "current smoker" to these people, via logistic regression with sampling weights
+
+## Propensity Model: 146 Covariates
+
+![](c06/figures/rubin-covs1.png)
+
+## Propensity Model: 146 Covariates
+
+![](c06/figures/rubin-covs2.png)
+
+## Propensity Model: 146 Covariates
+
+![](c06/figures/rubin-covs3.png)
+
+## Propensity Model: 146 Covariates
+
+![](c06/figures/rubin-covs4.png)
+
+Separate propensity models built for
+
+- former vs. never, Males
+- current vs. never, Females
+- former vs. never, Females
+
+# How Well does the Propensity Model Address Bias?
+
+## Assessing Overlap Step 1: Looking for Mean Bias
+
+Bias B = standardized difference in the means of logit(propensity scores) between current smokers and never smokers for males 
+
+- We want the bias in the propensity score to be small, no greater than 0.50 in absolute value.
+- Here, mean propensity score Bias B = 1.09 (109%)
+- In fact standardized difference > 0.5 (50%) for many of the individual covariates, as well.
+
+## Assessing Overlap Step 2: Comparing Variances
+
+Ratio R = ratio of the variances of logit(propensity scores) between current smokers and never smokers for males.
+
+- We want the variances to be homogeneous, so the ratio should be close to 1 (1/2 and 2 are far too extreme).
+- Here, variance ratio for logit(PS) is R = 1.00
+- Could look at ratio of individual covariate variances, also. (In fact, `MatchBalance` does this.)
+
+## Assessing Overlap Step 3: Comparing Residuals
+
+Regress each covariate on logit(PS) and look at ratio of variances of residuals for current smokers to variance of residuals for never smokers within the male population.
+
+- Here, we get a separate result for each of the 146 covariates. We want results near 1.00
+    + 57% of the covariates had their residual ratio between 4/5 and 5/4
+    + 5% of covariates had their residual ratio below 1/2, or above 2
+
+## Rubin's Table 2 (page 179)
+
+Interpretation on *next slide*
+
+![](c06/figures/rubin-table2a.png)
+
+![](c06/figures/rubin-table2b.png)
+
+## Interpretation
+
+> "... [A]ny linear (or part linear) regression model cannot be said to adjust reliably for these covariates, even if they were perfectly normally distributed. ... B [is] greater than 1/2, and many of the value of R for the residuals of the covariates are outside the range (4/5, 5/4)."
+
+## Similar Results for Other Comparisons
+
+![](c06/figures/rubin-table2.png)
+
+All four comparisons indicate the need for propensity score adjustments.
+
+## Matching within PS Calipers
+
+For the 3510 male current smokers, 3510 "matching" male never smokers were chosen from the pool of 4297 male never smokers.
+
+- Mahalanobis metric matching within propensity score calipers ($\pm$ 0.2 of the standard deviation of linear propensity scores)
+    - Mahalanobis distance variables were: age, education, body mass index, and sampling weight.
+    - Some of these are survey results, mostly (but not completely) in categories.
+  
+## Matching in NMES  
+    
+- In this case, there were no current smoker Males that could not be matched within the PS calipers to never smoker Males.
+    - What if there had been a treated subject whose propensity score was not "matchable"?
+    - What if the "donor pool" of never smokers had been empty for one of the current smokers?
+
+## Impact of Matching on Overlap
+
+**Male Current Smokers vs. Male Never Smokers**
+
+Scenario | Bias, B | Variance Ratio, R 
+--------:| :-:| :-:
+Before Matching | 1.09 | 1.00
+After Matching | 0.08 | 1.16
+
+## Impact of Matching on Overlap
+
+**Male Current Smokers vs. Male Never Smokers**
+
+Residual Variance Ratios (% in range)
+
+Range | Before Match | After Match
+-------: | --------: | --------:
+$\leq 0.5$ | 3 | 1
+($\frac{1}{2}, \frac{4}{5}$] | 9 | 3
+($\frac{4}{5}, \frac{5}{4}$] | **57** | **90**
+($\frac{5}{4}, 2$] | 26 | 6
+$> 2$ | 5 | 0
+
+
+## Matching's Impact on Overlap
+
+**Male Former Smokers vs. Male Never Smokers**
+
+Scenario | B | R | Res. VR in ($\frac{4}{5}, \frac{5}{4}$] 
+--------:| :-:| :-: | --
+Before Match | 1.06 | 0.82 | 61% of covariates
+After Match | 0.04 | 0.99 | 94%
+
+## Effect of Matching (Females)
+
+### Female **Current** vs. Never Smokers
+
+Scenario | B | R | Res. VR in ($\frac{4}{5}, \frac{5}{4}$] 
+--------:| :-:| :-: | --
+Before Match | 1.03 | 0.85 | 59% of covariates
+After Match | 0.04 | 0.94 | 93%
+
+### Female **Former** vs. Never Smokers
+
+Scenario | B | R | Res. VR in ($\frac{4}{5}, \frac{5}{4}$] 
+--------:| :-:| :-: | :--:
+Before Match | 0.65 | 1.02 | 85%
+After Match | 0.06 | 1.02 | 91%
+
+## Re-estimating PS using Matched Subjects Only
+
+Original propensity score estimate used all of the subjects, including those subjects who wound up being unused controls, once we matched.
+
+- Here, they are no longer concerned with unmatched "never smokers" so they re-estimate the propensity score using only the matched samples, then look at the remaining covariate imbalance.
+
+## Results after re-estimating PS
+
+Group | B | R | Res. VR in ($\frac{4}{5}, \frac{5}{4}$] 
+--------:| :-:| :-: | :--:
+Male, Current | 0.39 | 1.33 | 88%
+Male, Former | 0.32 | 1.33 | 95%
+Female, Current | 0.35 | 1.18 | 92%
+Female, Former | 0.31 | 1.09 | 91%
+
+- Looks better. 
+- Suppose we are **still** not satisfied.
+
+## Subclassification after Matching
+
+Create two equal-size (weighted) subclasses, low and high on the linear PS.
+
+- Treated and Control subjects with low PS are to be compared to each other.
+- Treated and Control subjects with high PS are to be compared to each other.
+- Weighted average of two comparisons yields the result.
+
+## Subclassification as Re-Weighting
+
+- For the treated subjects, the new weights implied by this subclassification are the total (weighted) number of treated and controls in that subclass, divided by the total (weighted) number of treated subjects.
+- For the control subjects, weights are the subclass total of treated & controls divided by subclass controls.
+
+Leads to a weighted PS analysis that reflects the additional balance due to subclassification.
+
+## How Many Subclasses?
+
+- The same idea for weighting works no matter how many subclasses
+    - One subclass is what we've had - no subclassification adjustment, just matching.
+    - We'll also look at the impact of incorporating 2, 4, 6, 8, or 10 subclasses after matching...
+    
+## Current vs. Never Smoking Males
+
+**Matching + Post-Matching Subclassification**
+
+Subclasses | B | R | Res. VR in ($\frac{4}{5}, \frac{5}{4}$] 
+:-------:| :-:| :-: | :--:
+1 | 0.39 | 1.33 | 88%
+2 | 0.18 | 1.36 | 98%
+4 | 0.10 | 1.25 | 99%
+6 | 0.09 | 1.30 | 100%
+8 | 0.08 | 1.16 | 100%
+10 | 0.07 | 1.12 | 100%
+
+## How Far Can We Go?
+
+We can obtain dramatic reduction in initial bias through this sort of subclassification, and we can carefully pick out just how many subclasses will be most helpful in getting the job done.
+
+We can even do Weighted Propensity Score Analysis (using as many subclasses as is possible) after matching.
+
+## Weighting after Matching
+
+- Form our weights directly from the estimated propensity score without subclassification.
+    - Weight for treated subject: inverse of his/her propensity score (times his/her NMES weight)
+    - Weight for control subject: inverse of 1 minus his/her propensity score (times NMES weight)
+    - Caveat: Can get unrealistically extreme weights when estimated PS is near zero or one.
+
+## Current vs. Never Smoking Males {.smaller}
+
+Analysis | B | R | Res. VR in ($\frac{4}{5}, \frac{5}{4}$] 
+:----------------------:| :-:| :-: | :---------:
+Full Sample | 1.09 | 1.00 | 57%
+Match full PS | 0.08 | 1.16 | 90%
+Match new PS | 0.39 | 1.33 | 88%
+Match, then 2 subclasses | 0.18 | 1.36 | 98%
+4 subclasses | 0.10 | 1.25 | 99%
+6 subclasses | 0.09 | 1.30 | 100%
+8 subclasses | 0.08 | 1.16 | 100%
+10 subclasses | 0.07 | 1.12 | 100%
+Match, then Weight | 0.03 | 1.19 | 100%
+
+## Why Work this Hard?
+
+- If substantial balance in covariates is obtained in this initial design stage, the exact form of the modeling adjustment is not critical.
+- Similar treated and control covariate distributions implies only limited model-based sensitivity.
+
+Why doesn't this introduce a bias for our eventual conclusions and analytic results?
+
+## Why can we get away with this?
+
+- We're not affecting our conclusions in a biased way, because we don't look at outcomes here.
+- In fact, I've yet to specify the outcomes, which are:
+  - Health-care expenditures of various types
+  - Occurrence of various smoking-related diseases
+
+These outcomes are never seen during the design process.
+
+## Rubin's Rules in the `toy` example
+
+Section 7. Rubin’s Rules to Check Overlap **Before** Propensity Adjustment
+
+1. Difference in mean (linps) = 85.9% of a pooled standard deviation
+2. Variance of linps ratio = 0.63
+3. Dot chart of the residual variance ratios (see 7.3.1)
+
+## Rubin's Rules: `toy` example (17.3)
+
+Approach | Rule 1 | Rule 2 | Rule 3
+----------------------- | ------: | ------: | ------:
+Unadjusted | 85.9 | 0.63 | 0.72 to 1.76
+1:1 Match | 25.3 | 1.24 | 0.8 to 1.3
+ATT Weighting | -9.1 | 0.79 | Not evaluated
+*"Goal"* | *near 0* | *near 1* | *near 1*
+
+- Clearly, the matching and propensity weighting show improvement over the initial (no adjustments) results, although neither is satisfactory for all covariates. Matching and weighting seem (mostly) OK.
+
+## Rubin's Rules: `lindner`
+
+Section 8. Rubin’s Rules to Check Overlap **Before** Propensity Adjustment
+
+1. Difference in mean (linps) = 61.9% of a pooled standard deviation
+2. Variance of linps ratio = 1.67
+3. rule 3 not evaluated in this example
+
+## Rubin's Rules 1 & 2: `lindner`
+
+Quality of Balance by Rubin's Summaries
+
+Approach | Rule 1 | Rule 2 
+----------------------- | ------: | ------: 
+Unadjusted | 61.9 | 1.67 
+1:1 Match w/o repl. | 65.5 | 1.78
+1:1 Match w/repl. | 0.9 | 1.05
+ATT Weighting | 4.8 | 0.90
+*"Goal"* | *near 0* | *near 1* 
+
+## Rubin's Rules 1 & 2: `dm2200`
+
+Approach | Rule 1 | Rule 2 
+----------------------- | ------: | ------: 
+Unmatched | 206.5 | 0.75 
+1:1 greedy match | 24.6 | 1.86
+1:2 greedy match | 50.0 | 2.44
+1:3 with replacement   | 3.1 | 1.12
+Caliper (0.2) 1:1 match | 0.1 | 1.02
+1:1 optimal match | 24.6 | 1.86
+*"Goal"* | *near 0* | *near 1* 
+
+# Here is a good spot for a **break**.
+
+# Austin and Mamdani (2006)
+
+## Austin and Mamdani (2006)
+
+![](c06/figures/am_01.png)
+
+## Summary (excerpt)
+
+Note: the next few slides quote directly from Austin and Mamdani.
+
+There is an increasing interest in the use of propensity score methods to estimate causal effects in observational studies. However, recent systematic reviews have demonstrated that **propensity score methods are inconsistently used and frequently poorly applied** in the medical literature.
+
+## Summary (continued)
+
+In this study, we compared the following propensity score methods for estimating the reduction in all-cause mortality due to statin therapy for patients hospitalized with acute myocardial infarction: propensity-score matching, stratification using the propensity score, covariate adjustment using the propensity score, and weighting
+using the propensity score.
+
+## Introduction, 1
+
+There is an increasing interest in using observational data to assess the impact of medical treatment or therapy on health outcomes.
+
+There is a growing interest in the use of propensity score-based methods for estimating treatment effects in observational studies.
+
+## Introduction, 2
+
+Three propensity score-based methods are commonly used in the medical literature: matching, covariate adjustment, and stratification or subclassification.... There is no consensus in the clinical literature as to which method is preferable. Furthermore, there is only a limited awareness of the relative strengths and limitations of each propensity score method.
+
+## Introduction, 3
+
+The purpose of the current study was two-fold. First, to compare estimates of treatment effectiveness obtained using different propensity score methods. In doing so, the relative merits and limitations of each method will be highlighted. Second, to carry out a detailed propensity score analysis, which will serve as a model for clinical investigators who wish to implement propensity score methods. 
+
+## Introduction, 4
+
+As a test case, we examine the effect of statin lipid-lowering therapy on reducing all-cause mortality for patients discharged alive from hospital with a diagnosis of acute myocardial infarction (AMI).
+
+## Data Sources, 1
+
+Detailed clinical data were collected on a sample of 11 524 patients discharged from Ontario hospitals between April 1, 1999 and March 31, 2001 by retrospective chart review.
+
+Data on patient history, cardiac risk factors, comorbid conditions and vascular history, vital signs, and laboratory tests were collected for this sample. Furthermore, data on medications prescribed at discharge were available for each patient. 
+
+## Data Sources, 2
+
+Linking patients to the registered persons database (RPDB) using encrypted health card numbers allowed us to determine each patient’s vital status. We allowed each patient to have 3 years of follow-up post-discharge. Patients who were missing data on important vital signs at admission or laboratory values were excluded from all subsequent analyses.
+
+## Assessing Balance, 1
+
+Differences in measured characteristics between treated and untreated patients were assessed using two methods. 
+
+First, the statistical significance of the difference in either the proportion of patients having a dichotomous risk factor or the difference in the mean of a continuous covariate between treated and untreated patients was tested. A chi-square test was used for dichotomous variables and a t-test was used for continuous variables. 
+
+## Assessing Balance, 2
+
+Second, the standardized difference was computed for each covariate. It has been suggested that a standardized difference of greater than 10 per cent represents meaningful imbalance in a given covariate between treatment groups.
+
+## Potential Confounders {.smaller}
+
+Clinical data contained the following variables that were potential confounders of the treatment effect: 
+
+- *demographic characteristics*: age, gender 
+- *presenting signs/symptoms*: shock and acute congestive heart failure, pulmonary oedema
+- *classical cardiac risk factors*: diabetes, CVA=TIA (history of cerebrovascular accident or transient ischaemic attack), history of hyperlipidaemia, hypertension, family history of heart disease, and smoking history
+- *comorbid conditions*: angina, cancer, congestive heart failure (CHF)=pulmonary oedema, and renal disease
+- *vital signs on admission*: systolic and diastolic blood pressure, heart rate, and respiratory rate
+- *laboratory results*: haemoglobin (Hgb), white blood count (WBC), sodium, potassium, glucose, and creatinine. 
+
+---
+
+![](c06/figures/am_02.png)
+
+## Propensity Score Development, 1
+
+We developed a propensity score model to predict the probability that the patient would be given a prescription for a statin at hospital discharge.
+
+- The propensity score model was developed to balance the distribution of the possible confounders between treated and untreated patients within each **quintile** of the estimated propensity score.
+- The iterative algorithm for developing the propensity score allowed for the inclusion of main effects, interaction terms, in addition to quadratic and cubic terms for continuous variables.
+
+## Propensity Score Development, 2
+
+Following the derivation of the propensity score model, untreated patients who had a lower estimated propensity score than any treated patient were excluded from subsequent analyses. 
+
+- The coefficients of the propensity model were then re-estimated on this reduced data set. 
+- This decision was made because of the belief that the excluded patients were different from all treated patients, and may thus have not been candidates for statin therapy.
+
+## Cohort Characteristics, 1
+
+Detailed clinical data were available on 11 524 patients admitted with a diagnosis of AMI. 
+
+- Encrypted health card numbers were missing for four records, which were excluded since linkage to the RPDB was not possible without a valid health card number. 
+- A further 1137 patients died during the index hospitalization, resulting in a cohort of 10,383 patients discharged alive from an index hospitalization for AMI. 
+
+## Cohort Characteristics, 2
+
+- Of these 10,383, a further 1,279 patients were removed from the analyses due to missing data on important confounding factors (vital signs on admission and laboratory test results). 
+- This resulted in a *final sample size of 9,104 AMI survivors* who were used for the development of the propensity score model.
+    - Overall, 3049 (33.5%) patients received a statin prescription at discharge. 
+
+## Unadjusted Results in This Cohort
+
+The 3-year mortality rate was 14.2% and 25.3% for those who did and did not receive a prescription for a statin at discharge
+    
+## The propensity score model
+
+The final propensity score model included 256 variables: 27 main effects and 229 two-way interactions. 
+
+- Following the derivation of the propensity score model, 95 untreated patients had a lower estimated propensity score than any treated patient, and were excluded from all subsequent analyses. 
+- Thus, 9009 patients were used in all subsequent analyses.
+
+---
+
+![](c06/figures/am_04.png)
+
+## Using the Propensity Score
+
+We sought to estimate the reduction in all-cause mortality attributable to the post-discharge use of statins, using four approaches: 
+
+1. stratifying on the quintiles of the estimated propensity score (PS), 
+2. matching treated and untreated patients using the estimated PS, 
+3. covariate adjustment using the estimated PS, and 
+4. weighting using the PS
+
+---
+
+![](c06/figures/am_03.png)
+
+---
+
+![](c06/figures/am_06.png)
+
+---
+
+![](c06/figures/am_07.png)
+
+---
+
+![](c06/figures/am_08.png)
+
+## Conclusions, 1
+
+In conclusion, we compared the estimated reduction in mortality due to receiving a statin prescription at hospital discharge for an AMI using different propensity score methods on a single data set. We demonstrated the breadth of propensity score methods and that these methods allow the estimation of both adjusted as well as absolute and relative treatment effects.
+
+## Conclusions, 2
+
+Earlier research has demonstrated that propensity score methods are often poorly implemented in the medical literature. Our intention, through carrying out an extended case study, was to demonstrate the breadth of the propensity score methods and how they can be more fully employed in clinical research.
+
+# How did Lab 2 go?
+
+## Discussion of Lab 2
+
+Details to appear in class.
+
+# Kubo et al. (2020)
+
+## Kubo et al. (2020) 
+
+Effects of preoperative low-intensity training with slow movement on early quadriceps weakness after total knee arthroplasty in patients with knee osteoarthritis: a retrospective propensity score-matched study
+
+- **Population**
+- **Outcome**
+- **Treatment**
+- **Covariates**
+
+## Key Words (from Abstract) {.smaller}
+
+- Exercise preconditioning, 
+- Ischemic preconditioning, 
+- Ischemia-reperfusion injury, 
+- Knee swelling, 
+- Low-intensity training, 
+- Prehabilitation, 
+- Quadriceps weakness, 
+- Slow movement, 
+- Thigh swelling, 
+- Total knee arthroplasty
+
+## Key Abbreviations {.smaller}
+
+- TKA: Total knee arthroplasty; 
+- QW: Quadriceps weakness; 
+- IR: Ischemia reperfusion;
+- IPC: Ischemic preconditioning; 
+- EPC: Exercise preconditioning;
+- LST: Low-intensity resistance exercise with slow movement and tonic force
+generation; 
+- QST: Quadriceps strength test; 
+- TUG: Timed up and go test;
+- SCT: Stair climb test; 
+- JKOM: Japanese Knee Osteoarthritis Measure; 
+- VAS: Visual analog scale; 
+- **SMD: Standardized mean difference**
+
+## Background {.smaller}
+
+Background: Severe and early quadriceps weakness (QW) after total knee arthroplasty (TKA), which is caused by acute inflammation resulting from surgical trauma and tourniquet-induced ischemia-reperfusion (IR) injury, can be especially problematic. We focused on tourniquet-induced IR injury, because it has been shown to be preventable through ischemic and exercise preconditioning. Low-intensity resistance exercise with slow movement and tonic force generation (LST) share some similarities with ischemic and exercise preconditioning. 
+
+**The present study primarily aimed** to clarify the efficacy of preoperative LST program as prehabilitation for early QW among patients with TKA using propensity score matching analysis.
+
+## Design and Measures, 1
+
+This *single-center retrospective* observational study used data from patients with knee osteoarthritis (n = 277) who were scheduled to undergo unilateral TKA between August 2015 and January 2017. 
+
+- The **LST group** included participants who performed LST and aerobic exercise (LST session) more than seven times for three months prior to surgery.
+- The **control group** included participants who performed less than eight LST sessions, a general and light exercise or had no exercise for three months prior to surgery. 
+
+## Design and Measures, 2
+
+- Those with missing outcome data due to their inability to perform tests were excluded. 
+- Knee circumference, thigh volume, knee pain during quadriceps strength test (QST) and timed up and go test (TUG), quadriceps strength, and TUG were measured *before and 4 days after surgery*. 
+- Knee swelling, thigh swelling, $\Delta$knee pain, QW, and $\Delta$TUG were determined by comparing pre- and post-operative measurements.
+
+## Check 1
+
+Can we describe the ...
+
+- Population
+- Outcome
+- Treatment
+- Covariates
+
+## Statistical Analysis
+
+- Propensity model: Treatment (LST or control) was regressed on age, gender, body mass index, and preoperative measurements, including quadriceps strength of the affected leg, knee pain during the QST and TUG, the TUG, the SCT, and JKOM scores. 
+- Propensity scores were subsequently used to match participants on a *one-to-one* basis using the *nearest-neighbor method without replacement* and a *caliper width of 0.2 standard deviations* of the logit of the PS. 
+- Statistical analysis conducted using IBM SPSS version 26
+
+## Figure 1 from Kubo et al. (2020)
+
+![](c06/figures/kubo2.png){width=85%}
+
+## Table 1 from Kubo et al. (2020)
+
+![](c06/figures/kubo3.png)
+
+
+## Study Limitations {.smaller}
+
+- First, the study included a small number of each group participants. 
+- Second, this was a single-center retrospective study; accounting for all unmeasured or unknown confounders affecting the outcomes was impossible, even after propensity score matching. 
+- Third, some variables remained imbalanced after propensity score matching.
+    - Most imbalanced variables were worse in the LST group than that in the control group, suggesting that preoperative LST program may have improved early QW even in cases with relatively low physical function. 
+- Finally, given that QW was assessed only on postoperative day 4, it remains uncertain whether early QW suppression can optimize long-term postoperative recovery. 
+- In future, a large-scale multicenter randomized controlled trial with long-term follow up is needed to address these limitations. 
+
+## Results from Kubo et al.
+
+Propensity score matching generated 41 matched pairs who had nearly balanced characteristics. 
+
+- The LST group had a significantly lower knee and thigh swelling, QW, and $\Delta$TUG compared to the control group (all, p < 0.05). 
+- No significant differences in $\Delta$knee pain during the QST and TUG were observed between both groups (both, p > 0.05).
+
+## Conclusions from Kubo et al.
+
+*Abstract*: The present study demonstrated the beneficial effects of preoperative LST program on knee swelling, thigh swelling, QW, and walking disability immediately after TKA.
+
+*Paper*: The present study showed that preoperative LST program exerted beneficial effects on knee and thigh swelling, QW, and walking disability immediately after TKA. Future research addressing the limitations of this study is nonetheless needed to confirm the validity of our findings.
+
+## Coming Up
+
+1. Analyses of the SUPPORT / Right Heart Catheterization Study
+2. Propensity Scores and Sensitivity Analysis
+
+### What Should I Be Doing Before Class 7?
+
+- [Project Proposal](https://thomaselove.github.io/500-2026/proj500.html) due to Canvas at noon on Tuesday 2026-03-03
+- OSIA and Project Development
+- Read Connors (1996) and D'Agostino Jr (1998)
+
