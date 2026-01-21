@@ -544,6 +544,10 @@ Section 19 of the [toy example](https://thomaselove.github.io/500-examples/) pro
 
 # This might be a place for a **break**.
 
+## Rosenbaum's Shiny Tool
+
+We'll visit <https://rosenbap.shinyapps.io/learnsenShiny/>.
+
 ## Project Proposals Discussion
 
 Details in class.
